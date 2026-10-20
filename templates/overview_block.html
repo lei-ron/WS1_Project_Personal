@@ -73,7 +73,7 @@ block styles %}
     <div class="recent_scan_history">
       <div class="card_title"><h3>Recent Scan History</h3></div>
 
-      <div class="card">
+      <!-- <div class="card">
         <ul class="history-list">
           {% if scan_history %} {% for scan in scan_history %}
           <li>
@@ -101,7 +101,41 @@ block styles %}
           </li>
           {% endif %}
         </ul>
-      </div>
+      </div> -->
+    </div>
+
+    <div class="recent_scan_history">
+      <div class="card_title"><h3>Recent Scan History</h3></div>
+
+      <!-- <div class="card">
+        <ul class="history-list">
+          {% if scan_history %} {% for scan in scan_history %}
+          <li>
+            <span class="badge-check">✓</span>
+            {{ scan.subject }} |
+            <span class="status-present">{{ scan.status }}</span> | {{ scan.time
+            }}
+          </li>
+          {% endfor %} {% else %}
+          <li>
+            <span class="badge-check">✓</span> WS1 - Web Systems |
+            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
+          </li>
+          <li>
+            <span class="badge-check">✓</span> WS1 - Web Systems |
+            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
+          </li>
+          <li>
+            <span class="badge-check">✓</span> WS1 - Web Systems |
+            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
+          </li>
+          <li>
+            <span class="badge-check">✓</span> WS1 - Web Systems |
+            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
+          </li>
+          {% endif %}
+        </ul>
+      </div> -->
     </div>
 
     <!-- <div class="upcoming_schedule">
