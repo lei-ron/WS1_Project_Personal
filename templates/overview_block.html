@@ -8,11 +8,12 @@ block styles %}
 <div class="cards_container">
   <div class="left_column_group">
     <div class="subjects_list">
-      <div class="card_title"><h3>Subjects List</h3></div>
+      <div class="card_title">
+        <h3>Subjects List</h3>
+      </div>
 
       <div class="subjects_content">
         {% for subject in subjects %}
-
         <div class="card">
           <h4>{{ subject.subject_code }}: {{ subject.subject_name }}</h4>
 
@@ -21,14 +22,14 @@ block styles %}
               <p>Schedule:</p>
               <p>Time:</p>
               <p>Room:</p>
-              <p>Student:</p>
+              <p>Section:</p>
             </div>
 
             <div class="info_data">
               <p>{{ subject.schedule }}</p>
-              <p>{{ subject.time }}</p>
-              <p>{{ subject.room }}</p>
-              <p>{{ subject.student_count }}</p>
+              <p>{{ subject.start_time }} - {{ subject.end_time }}</p>
+              <p>{{ subject.building }}-{{ subject.room_number }}</p>
+              <p>{{ subject.section }}</p>
             </div>
           </div>
         </div>
@@ -39,11 +40,12 @@ block styles %}
     </div>
 
     <div class="upcoming_schedule">
-      <div class="card_title"><h3>Upcoming Schedule</h3></div>
+      <div class="card_title">
+        <h3>Upcoming Schedule</h3>
+      </div>
 
       <div class="subjects_content">
         {% for subject in upcoming_subjects %}
-
         <div class="card">
           <h4>{{ subject.subject_code }}: {{ subject.subject_name }}</h4>
 
@@ -56,14 +58,15 @@ block styles %}
                 days_until == 0 %} Today {% elif days_until == 1 %} Tomorrow {%
                 else %} {{ subject.schedule }} {% endif %}
               </p>
-              <p>{{ subject.time }}</p>
-              <p>{{ subject.room }}</p>
-              <p>{{ subject.student_count }}</p>
+
+              <p>{{ subject.start_time }} - {{ subject.end_time }}</p>
+              <p>{{ subject.building }}-{{ subject.room_number }}</p>
+              <p>{{ subject.section }}</p>
             </div>
           </div>
         </div>
         {% else %}
-        <p>No subjects added yet.</p>
+        <p>No upcoming classes.</p>
         {% endfor %}
       </div>
     </div>

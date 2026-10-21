@@ -131,16 +131,7 @@
                         <label for="program">Program:</label>
                         <select name="program" id="program" required>
                           <option value="" disabled selected>
-                            Select an option below:
-                          </option>
-                          <option value="subject1">
-                            BSCS: Bachelor of Science in Computer Science
-                          </option>
-                          <option value="subject2">
-                            BSIT: Bachelor of Science in Information Technology
-                          </option>
-                          <option value="subject3">
-                            BSCRIM: Bachelor of Science in Criminology
+                            Select a program:
                           </option>
                         </select>
                       </div>
@@ -148,23 +139,33 @@
                       <div class="form_group_container">
                         <div class="form_group">
                           <label for="year_level">Year Level:</label>
-                          <select name="year_level" id="year_level" required>
-                            <option value="" disabled selected></option>
-                            <option value="year_one">1st</option>
-                            <option value="year_two">2nd</option>
-                            <option value="irregular">Irregular</option>
+                          <select
+                            name="year_level"
+                            id="year_level"
+                            required
+                            disabled
+                          >
+                            <option value="">Select a program first</option>
                           </select>
                         </div>
-
                         <div class="form_group">
-                          <label for="section">Section:</label>
-                          <select name="section" id="section" required>
-                            <option value="" disabled selected></option>
-                            <option value="section1">Section 1</option>
-                            <option value="section2">Section 2</option>
-                            <option value="section3">Section 3</option>
+                          <label for="trimester">Trimester:</label>
+                          <select
+                            name="trimester"
+                            id="trimester"
+                            required
+                            disabled
+                          >
+                            <option value="">Select a year level first</option>
                           </select>
                         </div>
+                      </div>
+
+                      <div class="form_single">
+                        <label for="section">Section:</label>
+                        <select name="section" id="section" required disabled>
+                          <option value="">Select a trimester first</option>
+                        </select>
                       </div>
                     </div>
 

@@ -15,4 +15,6 @@ db = client["users_data"]
 
 students_collection = db["students"]
 professors_collection = db["professors"]
+programs_collection = db["programs"]
+sections_collection = db["sections"]
 subjects_collection = db["subjects"]
