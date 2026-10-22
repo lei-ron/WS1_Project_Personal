@@ -1,3 +1,5 @@
+import os
+import uuid
 from flask import (
     Blueprint,
     render_template,
@@ -6,18 +8,35 @@ from flask import (
     redirect,
     url_for,
     jsonify,
+    current_app,
 )
 from database.db import (
     students_collection,
     professors_collection,
+    guidance_collection,
     programs_collection,
     sections_collection,
     subjects_collection,
 )
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash,
+)
+from werkzeug.utils import secure_filename
 from datetime import datetime, timedelta
 
 users = Blueprint("users", __name__)
+
+UPLOAD_FOLDER = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "uploads",
+    "orf_documents",
+)
+
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+#! Routes Section
 
 
 @users.route("/")
@@ -34,14 +53,36 @@ def submit():
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "")
 
-    if not all([first_name, last_name, id_number, email, password]):
+    program = request.form.get("program", "").strip()
+    year_level = request.form.get("year_level", "").strip()
+    trimester = request.form.get("trimester", "").strip()
+    section = request.form.get("section", "").strip()
+
+    # Check required fields
+    if not all(
+        [
+            first_name,
+            last_name,
+            id_number,
+            email,
+            password,
+            program,
+            year_level,
+            trimester,
+            section,
+        ]
+    ):
         return (
             jsonify(
-                {"success": False, "message": "Please complete all required fields."}
+                {
+                    "success": False,
+                    "message": "Please complete all required fields.",
+                }
             ),
             400,
         )
 
+    # Check for existing accounts
     existing_student = students_collection.find_one(
         {"$or": [{"id_number": id_number}, {"email": email}]}
     )
@@ -58,27 +99,131 @@ def submit():
         else:
             message = "Email is already registered."
 
-        return jsonify({"success": False, "message": message}), 409
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": message,
+                }
+            ),
+            409,
+        )
 
+    # Get the uploaded ORF
+    orf_file = request.files.get("latest_orf")
+
+    if not orf_file or not orf_file.filename:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Please upload your Latest ORF PDF.",
+                }
+            ),
+            400,
+        )
+
+    # Check the file extension
+    if not orf_file.filename.lower().endswith(".pdf"):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Only PDF files are allowed.",
+                }
+            ),
+            400,
+        )
+
+    # Check the file size
+    orf_file.stream.seek(0, os.SEEK_END)
+    file_size = orf_file.stream.tell()
+    orf_file.stream.seek(0)
+
+    if file_size > MAX_FILE_SIZE:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "The PDF must not exceed 5 MB.",
+                }
+            ),
+            400,
+        )
+
+    # Check the PDF file signature
+    if orf_file.stream.read(5) != b"%PDF-":
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "The uploaded file is not a valid PDF.",
+                }
+            ),
+            400,
+        )
+
+    orf_file.stream.seek(0)
+
+    # Create the upload folder if it doesn't exist
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+    # Generate a unique filename
+    generated_filename = f"{uuid.uuid4().hex}.pdf"
+    file_path = os.path.join(UPLOAD_FOLDER, generated_filename)
+
+    # Save the PDF
+    orf_file.save(file_path)
+
+    # Create the student record
     user = {
         "first_name": first_name,
         "last_name": last_name,
         "id_number": id_number,
         "email": email,
         "password": generate_password_hash(password),
-        "program": request.form.get("program", "").strip(),
-        "year_level": request.form.get("year_level", "").strip(),
-        "section": request.form.get("section", "").strip(),
+        "program": program,
+        "year_level": year_level,
+        "trimester": trimester,
+        "section": section,
         "role": "student",
+        # Admission details
+        "admission_status": "Pending",
+        "admission_remarks": "",
+        "reviewed_by": None,
+        "reviewed_at": None,
+        # ORF document reference
+        "latest_orf": {
+            "filename": generated_filename,
+            "original_filename": secure_filename(orf_file.filename),
+        },
     }
 
-    result = students_collection.insert_one(user)
+    try:
+        result = students_collection.insert_one(user)
+    except Exception:
+        # Remove the uploaded file if saving the database record fails
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
-    session["user_id"] = str(result.inserted_id)
-    session["id_number"] = id_number
-    session["role"] = "student"
+        current_app.logger.exception("Failed to save student registration.")
 
-    return jsonify({"success": True, "message": "Success! Directing to overview."})
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Registration failed. Please try again.",
+                }
+            ),
+            500,
+        )
+
+    return jsonify(
+        {
+            "success": True,
+            "message": "Registration successful! Your admission is pending review.",
+        }
+    )
 
 
 #! Login Form
@@ -92,22 +237,31 @@ def login():
     if not user:
         user = professors_collection.find_one({"id_number": id_number})
 
+    if not user:
+        user = guidance_collection.find_one({"id_number": id_number})
+
     if user and check_password_hash(user["password"], password):
         role = user.get("role")
 
-        # Support existing accounts that don't have a role field yet.
+        # Support existing accounts without a role field.
         if not role:
             if students_collection.find_one({"_id": user["_id"]}):
                 role = "student"
-            else:
+            elif professors_collection.find_one({"_id": user["_id"]}):
                 role = "professor"
+            else:
+                role = "guidance"
 
         session["user_id"] = str(user["_id"])
         session["id_number"] = user["id_number"]
         session["role"] = role
+        session["first_name"] = user.get("first_name", "")
 
         return jsonify(
-            {"success": True, "message": "Login successful! Redirecting to overview."}
+            {
+                "success": True,
+                "message": "Login successful! Redirecting to overview.",
+            }
         )
 
     return jsonify({"success": False, "message": "Invalid ID number or password."}), 401
@@ -125,8 +279,10 @@ def dashboard():
 
     if session.get("role") == "student":
         user = students_collection.find_one({"_id": user_id})
-    else:
+    elif session.get("role") == "professor":
         user = professors_collection.find_one({"_id": user_id})
+    else:
+        user = guidance_collection.find_one({"_id": user_id})
 
     subjects = list(subjects_collection.find())
 
@@ -590,6 +746,32 @@ def attendance():
         return redirect(url_for("users.home"))
 
     return render_template("attendance_block.html")
+
+
+#! Admission Management
+@users.route("/admissions")
+def admissions():
+    if "user_id" not in session:
+        return redirect(url_for("users.home"))
+
+    if session.get("role") != "guidance":
+        return "Access denied.", 403
+
+    students = list(
+        students_collection.find(
+            {},
+            {
+                "password": 0,
+            },
+        ).sort("last_name", 1)
+    )
+
+    return render_template(
+        "admissions_block.html",
+        page_title="Admission Management",
+        first_name=session.get("first_name", ""),
+        students=students,
+    )
 
 
 # TODO Pending lines

@@ -275,13 +275,12 @@ form.addEventListener("submit", async (event) => {
     : "form_message error show";
 
   if (result.success) {
-    setTimeout(() => {
-      window.location.href = "/dashboard"
-    }, 3000);
-  } else {
+    form_message.textContent =
+      "Registration successful! Your admission is pending review.";
+    form_message.className = "success";
 
     setTimeout(() => {
-      form_message.classList.remove("show")
+      registration_form.close();
     }, 3000);
   }
 });
