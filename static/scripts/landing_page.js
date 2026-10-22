@@ -1,4 +1,4 @@
-//* Form dialog pop-up
+//! Form dialog pop-up
 const register_cta = document.getElementById("register_cta");
 const login_cta = document.getElementById("login_cta");
 
@@ -41,7 +41,7 @@ form_login_cta.addEventListener("click", function () {
 });
 
 
-//* Student field inputs switch (Toggle select inputs)
+//! Student field inputs switch (Toggle select inputs)
 const is_student = document.getElementById("is_student");
 const student_fields = document.getElementById("student_fields");
 
@@ -76,7 +76,7 @@ is_student.addEventListener("change", toggle_student_fields);
 toggle_student_fields();
 
 
-//* Registration form response
+//! Registration form response
 const form = document.getElementById("registration_data");
 const form_message = document.getElementById("form_message");
 
@@ -107,7 +107,7 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-//* Login form response
+//! Login form response
 const form2 = document.getElementById("login_data");
 const login_message = document.getElementById("login_message");
 

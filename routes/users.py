@@ -576,7 +576,7 @@ def get_subjects():
     return jsonify({"subjects": subjects})
 
 
-# TODO Add subjects testing
+# TODO Add subjects testing (rename)
 @users.route("/testing_subjects", methods=["POST"])
 def testing_subjects():
     subject = {
@@ -593,24 +593,25 @@ def testing_subjects():
     return redirect(url_for("users.dashboard"))
 
 
-@users.route("/attendance")
-def attendance():
-    if "user_id" not in session:
-        return redirect(url_for("users.home"))
+# TODO Pending lines
+# @users.route("/attendance")
+# def attendance():
+#     if "user_id" not in session:
+#         return redirect(url_for("users.home"))
 
-    return render_template("attendance_block.html")
-
-
-@users.route("/student/profile")
-def student_profile():
-    return render_template("student_profile.html")
+#     return render_template("attendance_block.html")
 
 
-@users.route("/settings")
-def settings():
-    return render_template("settings.html")
+# @users.route("/student/profile")
+# def student_profile():
+#     return render_template("student_profile.html")
 
 
-@users.route("/student/overview")
-def student_overview():
-    return render_template("student/overview.html")
+# @users.route("/settings")
+# def settings():
+#     return render_template("settings.html")
+
+
+# @users.route("/student/overview")
+# def student_overview():
+#     return render_template("student/overview.html")

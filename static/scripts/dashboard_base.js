@@ -1,3 +1,4 @@
+//! Side Navbar Toggle
 const dashboard = document.getElementById("dashboard")
 const toggle_sidebar = document.getElementById("sidebar_toggle")
 
@@ -12,5 +13,3 @@ toggle_sidebar.addEventListener("click", () => {
         dashboard.classList.contains("expanded")
     );
 });
-
-
