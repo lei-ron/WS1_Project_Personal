@@ -66,11 +66,9 @@
               <button id="login_cta">Log In</button>
 
               <!--* Registration Form -->
-
               <dialog id="registration_form">
                 <div class="form_container">
                   <h3>Registration Form</h3>
-
                   <div class="form_message" id="form_message"></div>
 
                   <form
@@ -79,131 +77,171 @@
                     method="POST"
                     autocomplete="off"
                   >
-                    <div class="form_group_container">
-                      <div class="form_group">
-                        <label for="first_name">First name:</label>
-                        <input
-                          type="text"
-                          id="first_name"
-                          name="first_name"
-                          placeholder="JUAN"
-                          required
-                        />
-                      </div>
-
-                      <div class="form_group">
-                        <label for="last_name">Last name:</label>
-                        <input
-                          type="text"
-                          id="last_name"
-                          name="last_name"
-                          placeholder="DELA CRUZ"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div class="form_single">
-                      <label for="id_number">ID no:</label>
-                      <input
-                        type="text"
-                        id="id_number"
-                        name="id_number"
-                        placeholder="e.g., CA202205945"
-                        required
-                      />
-                    </div>
-
-                    <div class="form_checkbox">
-                      <label for="is_student">
-                        <input
-                          type="checkbox"
-                          name="is_student"
-                          id="is_student"
-                          value="true"
-                        />
-                        Register as a student?
-                      </label>
-                    </div>
-
-                    <div id="student_fields">
-                      <div class="form_single">
-                        <label for="program">Program:</label>
-                        <select name="program" id="program" required>
-                          <option value="" disabled selected>
-                            Select a program:
-                          </option>
-                        </select>
-                      </div>
-
+                    <!--* Step 1 -->
+                    <div id="registration_step_1">
                       <div class="form_group_container">
                         <div class="form_group">
-                          <label for="year_level">Year Level:</label>
-                          <select
-                            name="year_level"
-                            id="year_level"
+                          <label for="first_name">First name:</label>
+                          <input
+                            type="text"
+                            id="first_name"
+                            name="first_name"
+                            placeholder="JUAN"
                             required
-                            disabled
-                          >
-                            <option value="">Select a program first</option>
-                          </select>
+                          />
                         </div>
+
                         <div class="form_group">
-                          <label for="trimester">Trimester:</label>
-                          <select
-                            name="trimester"
-                            id="trimester"
+                          <label for="last_name">Last name:</label>
+                          <input
+                            type="text"
+                            id="last_name"
+                            name="last_name"
+                            placeholder="DELA CRUZ"
                             required
-                            disabled
-                          >
-                            <option value="">Select a year level first</option>
-                          </select>
+                          />
                         </div>
                       </div>
 
                       <div class="form_single">
-                        <label for="section">Section:</label>
-                        <select name="section" id="section" required disabled>
-                          <option value="">Select a trimester first</option>
-                        </select>
+                        <label for="id_number">Student ID:</label>
+                        <input
+                          type="text"
+                          id="id_number"
+                          name="id_number"
+                          placeholder="e.g., CA202205945"
+                          pattern="[A-Za-z]{2}[0-9]{9}"
+                          minlength="11"
+                          maxlength="11"
+                          title="Student ID must contain 2 letters followed by 9 digits."
+                          required
+                        />
+                      </div>
+
+                      <div class="form_single">
+                        <label for="email">Email:</label>
+                        <input
+                          type="email"
+                          id="email"
+                          name="email"
+                          placeholder="e.g., juandelacruz@gmail.com"
+                          required
+                        />
+                      </div>
+
+                      <div class="form_single">
+                        <label for="password">Password:</label>
+                        <input
+                          type="password"
+                          id="password"
+                          name="password"
+                          minlength="8"
+                          maxlength="64"
+                          placeholder="At least 8 characters."
+                          required
+                        />
                       </div>
                     </div>
 
-                    <div class="form_single">
-                      <label for="email">Email:</label>
-                      <input
-                        type="email"
-                        id="email"
-                        name="email"
-                        placeholder="e.g., juandelacruz@gmail.com"
-                        required
-                      />
-                    </div>
+                    <!--* Step 2 -->
+                    <div id="registration_step_2" hidden>
+                      <div id="student_fields">
+                        <div class="form_single">
+                          <label for="program">Program:</label>
+                          <select name="program" id="program" required>
+                            <option value="" disabled selected>
+                              Select a program:
+                            </option>
+                          </select>
+                        </div>
 
-                    <div class="form_single">
-                      <label for="password">Password:</label>
-                      <input
-                        type="password"
-                        id="password"
-                        name="password"
-                        minlength="8"
-                        maxlength="64"
-                        placeholder="At least 8 characters."
-                        required
-                      />
+                        <div class="form_group_container">
+                          <div class="form_group">
+                            <label for="year_level">Year Level:</label>
+                            <select
+                              name="year_level"
+                              id="year_level"
+                              required
+                              disabled
+                            >
+                              <option value="" selected disabled>
+                                Select a year level
+                              </option>
+                            </select>
+                          </div>
+
+                          <div class="form_group">
+                            <label for="trimester">Trimester:</label>
+                            <select
+                              name="trimester"
+                              id="trimester"
+                              required
+                              disabled
+                            >
+                              <option value="" selected disabled>
+                                Select a trimester
+                              </option>
+                              <option value="1">Trimester 1</option>
+                              <option value="2">Trimester 2</option>
+                              <option value="3">Trimester 3</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div class="form_single">
+                          <label for="section">Section:</label>
+                          <select name="section" id="section" required disabled>
+                            <option value="" selected disabled>
+                              Select a section
+                            </option>
+                          </select>
+                        </div>
+
+                        <div class="form_single">
+                          <label for="latest_orf">Latest ORF:</label>
+                          <div class="file_drop_area" id="file_drop_area">
+                            <input
+                              type="file"
+                              id="latest_orf"
+                              name="latest_orf"
+                              accept=".pdf"
+                              required
+                            />
+
+                            <p>
+                              Click to browse or<br />
+                              drop file inside the box.
+                            </p>
+                            <p id="file_name">No file inserted.</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </form>
 
                   <div class="submission_cta">
-                    <button type="submit" form="registration_data">
-                      Sign Up
-                    </button>
+                    <button type="button" id="next_step">Next</button>
+
+                    <div class="back_and_proceed">
+                      <button type="button" id="previous_step" hidden>
+                        Back
+                      </button>
+
+                      <button
+                        type="submit"
+                        id="signup_button"
+                        form="registration_data"
+                        hidden
+                      >
+                        Sign Up
+                      </button>
+                    </div>
                   </div>
                 </div>
+
                 <div class="side_header">
                   <div class="side_header_description">
                     <h3>Welcome!<br />Nice to meet you.</h3>
-
                     <p>
                       Create your account to get started with our attendance
                       monitoring system.

@@ -28,50 +28,56 @@ def home():
 #! Registration Form
 @users.route("/submit", methods=["POST"])
 def submit():
-    first_name = request.form.get("first_name").strip().upper()
-    last_name = request.form.get("last_name").strip().upper()
-    id_number = request.form.get("id_number").strip().upper()
-    is_student = request.form.get("is_student") == "true"
-    email = request.form.get("email").strip().lower()
-    password = generate_password_hash(request.form.get("password"))
+    first_name = request.form.get("first_name", "").strip().upper()
+    last_name = request.form.get("last_name", "").strip().upper()
+    id_number = request.form.get("id_number", "").strip().upper()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
 
-    existing_student = students_collection.find_one({"id_number": id_number})
-    existing_professor = professors_collection.find_one({"id_number": id_number})
-    existing_student_email = students_collection.find_one({"email": email})
-    existing_professor_email = professors_collection.find_one({"email": email})
+    if not all([first_name, last_name, id_number, email, password]):
+        return (
+            jsonify(
+                {"success": False, "message": "Please complete all required fields."}
+            ),
+            400,
+        )
+
+    existing_student = students_collection.find_one(
+        {"$or": [{"id_number": id_number}, {"email": email}]}
+    )
+
+    existing_professor = professors_collection.find_one(
+        {"$or": [{"id_number": id_number}, {"email": email}]}
+    )
 
     if existing_student or existing_professor:
-        return (
-            jsonify({"success": False, "message": "ID number is already registered."}),
-            409,
-        )
+        if (existing_student and existing_student.get("id_number") == id_number) or (
+            existing_professor and existing_professor.get("id_number") == id_number
+        ):
+            message = "ID number is already registered."
+        else:
+            message = "Email is already registered."
 
-    if existing_student_email or existing_professor_email:
-        return (
-            jsonify({"success": False, "message": "Email is already registered."}),
-            409,
-        )
+        return jsonify({"success": False, "message": message}), 409
 
     user = {
         "first_name": first_name,
         "last_name": last_name,
         "id_number": id_number,
         "email": email,
-        "password": password,
+        "password": generate_password_hash(password),
+        "program": request.form.get("program", "").strip(),
+        "year_level": request.form.get("year_level", "").strip(),
+        "section": request.form.get("section", "").strip(),
+        "role": "student",
     }
 
-    if is_student:
-        user["program"] = request.form.get("program")
-        user["year_level"] = request.form.get("year_level")
-        user["section"] = request.form.get("section")
-
-        result = students_collection.insert_one(user)
-        session["role"] = "student"
-    else:
-        result = professors_collection.insert_one(user)
-        session["role"] = "professor"
+    result = students_collection.insert_one(user)
 
     session["user_id"] = str(result.inserted_id)
+    session["id_number"] = id_number
+    session["role"] = "student"
+
     return jsonify({"success": True, "message": "Success! Directing to overview."})
 
 
@@ -82,13 +88,20 @@ def login():
     password = request.form.get("password", "")
 
     user = students_collection.find_one({"id_number": id_number})
-    role = "student"
 
     if not user:
         user = professors_collection.find_one({"id_number": id_number})
-        role = "professor"
 
     if user and check_password_hash(user["password"], password):
+        role = user.get("role")
+
+        # Support existing accounts that don't have a role field yet.
+        if not role:
+            if students_collection.find_one({"_id": user["_id"]}):
+                role = "student"
+            else:
+                role = "professor"
+
         session["user_id"] = str(user["_id"])
         session["id_number"] = user["id_number"]
         session["role"] = role
@@ -249,17 +262,6 @@ def register_program():
 #! Pass programs
 @users.route("/get_programs")
 def get_programs():
-    if "user_id" not in session:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please log in first.",
-                }
-            ),
-            401,
-        )
-
     programs = list(
         programs_collection.find(
             {},
@@ -414,17 +416,6 @@ def register_section():
 
 @users.route("/get_sections")
 def get_sections():
-    if "user_id" not in session:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please log in first.",
-                }
-            ),
-            401,
-        )
-
     sections = list(
         sections_collection.find(
             {},
@@ -593,15 +584,15 @@ def testing_subjects():
     return redirect(url_for("users.dashboard"))
 
 
+@users.route("/attendance")
+def attendance():
+    if "user_id" not in session:
+        return redirect(url_for("users.home"))
+
+    return render_template("attendance_block.html")
+
+
 # TODO Pending lines
-# @users.route("/attendance")
-# def attendance():
-#     if "user_id" not in session:
-#         return redirect(url_for("users.home"))
-
-#     return render_template("attendance_block.html")
-
-
 # @users.route("/student/profile")
 # def student_profile():
 #     return render_template("student_profile.html")
