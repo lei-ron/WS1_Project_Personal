@@ -1,5 +1,8 @@
 import os
 import uuid
+
+from datetime import datetime, timedelta
+
 from flask import (
     Blueprint,
     render_template,
@@ -9,23 +12,21 @@ from flask import (
     url_for,
     jsonify,
     current_app,
-    abort,
-    send_from_directory,
 )
+
 from database.db import (
     students_collection,
     professors_collection,
     guidance_collection,
-    programs_collection,
-    sections_collection,
     subjects_collection,
 )
+
 from werkzeug.security import (
     generate_password_hash,
     check_password_hash,
 )
+
 from werkzeug.utils import secure_filename
-from datetime import datetime, timedelta
 
 users = Blueprint("users", __name__)
 
@@ -36,9 +37,6 @@ UPLOAD_FOLDER = os.path.join(
 )
 
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
-
-
-#! Routes Section
 
 
 @users.route("/")
@@ -201,7 +199,7 @@ def submit():
     }
 
     try:
-        result = students_collection.insert_one(user)
+        students_collection.insert_one(user)
 
     except Exception:
         # Remove the uploaded file if saving the database record fails
@@ -318,6 +316,10 @@ def dashboard():
     else:
         user = guidance_collection.find_one({"_id": user_id})
 
+    if not user:
+        session.clear()
+        return redirect(url_for("users.home"))
+
     subjects = list(subjects_collection.find())
 
     days = {
@@ -339,7 +341,9 @@ def dashboard():
             return datetime.max
 
         try:
-            subject_time = datetime.strptime(subject.get("time", ""), "%H:%M").time()
+            subject_time = datetime.strptime(
+                subject.get("start_time", ""), "%H:%M"
+            ).time()
         except ValueError:
             return datetime.max
 
@@ -366,613 +370,9 @@ def dashboard():
     )
 
 
-#! Programs Manager
-@users.route("/program_manager")
-def program_manager():
-    if "user_id" not in session:
-        return redirect(url_for("users.home"))
-
-    programs = list(programs_collection.find({}, {"_id": 0}))
-
-    return render_template(
-        "program_manager_block.html",
-        page_title="Program Manager",
-        programs=programs,
-    )
-
-
-@users.route("/register_program", methods=["POST"])
-def register_program():
-    program_code = request.form.get("program_code", "").strip().upper()
-    program_name = request.form.get("program_name", "").strip()
-    year_levels = request.form.get("year_levels", "")
-
-    if not program_code or not program_name or not year_levels:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please complete all program fields.",
-                }
-            ),
-            400,
-        )
-
-    try:
-        year_levels = int(year_levels)
-    except ValueError:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Invalid number of year levels.",
-                }
-            ),
-            400,
-        )
-
-    if year_levels not in range(1, 5):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Year levels must be between 1 and 4.",
-                }
-            ),
-            400,
-        )
-
-    if programs_collection.find_one({"program_code": program_code}):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "This program code is already registered.",
-                }
-            ),
-            409,
-        )
-
-    programs_collection.insert_one(
-        {
-            "program_code": program_code,
-            "program_name": program_name,
-            "year_levels": year_levels,
-        }
-    )
-
-    return jsonify(
-        {
-            "success": True,
-            "message": "Program registered successfully.",
-        }
-    )
-
-
-#! Pass programs
-@users.route("/get_programs")
-def get_programs():
-    programs = list(
-        programs_collection.find(
-            {},
-            {"_id": 0, "program_code": 1, "program_name": 1, "year_levels": 1},
-        )
-    )
-
-    return jsonify({"programs": programs})
-
-
-#! Register sections
-@users.route("/register_section", methods=["POST"])
-def register_section():
-    if "user_id" not in session:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please log in first.",
-                }
-            ),
-            401,
-        )
-
-    program_code = request.form.get("program", "").strip().upper()
-    learning_modality = request.form.get("learning_modality", "").strip().upper()
-    campus = request.form.get("campus", "").strip().upper()
-    year_level = request.form.get("year_level", "").strip()
-    current_trimester = request.form.get("current_trimester", "").strip()
-    trimester_period = request.form.get("trimester_period", "").strip()
-    section_session = request.form.get("session", "").strip().upper()
-    section_number = request.form.get("section_number", "").strip()
-    section_name = request.form.get("section_name", "").strip().upper()
-
-    if not all(
-        [
-            program_code,
-            learning_modality,
-            campus,
-            year_level,
-            current_trimester,
-            trimester_period,
-            section_session,
-            section_number,
-            section_name,
-        ]
-    ):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please complete all section fields.",
-                }
-            ),
-            400,
-        )
-
-    program = programs_collection.find_one({"program_code": program_code})
-
-    if not program:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "The selected program does not exist.",
-                }
-            ),
-            400,
-        )
-
-    try:
-        year_level = int(year_level)
-        current_trimester = int(current_trimester)
-        trimester_period = int(trimester_period)
-        section_number = int(section_number)
-    except ValueError:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Invalid section details.",
-                }
-            ),
-            400,
-        )
-
-    if not 1 <= year_level <= program["year_levels"]:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Invalid year level for the selected program.",
-                }
-            ),
-            400,
-        )
-
-    if current_trimester not in range(1, 4) or trimester_period not in range(1, 4):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Trimester values must be between 1 and 3.",
-                }
-            ),
-            400,
-        )
-
-    if section_number < 1 or section_number > 999:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Section number must be between 1 and 999.",
-                }
-            ),
-            400,
-        )
-
-    if sections_collection.find_one({"section_name": section_name}):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "This section is already registered.",
-                }
-            ),
-            409,
-        )
-
-    sections_collection.insert_one(
-        {
-            "program_code": program_code,
-            "learning_modality": learning_modality,
-            "campus": campus,
-            "year_level": year_level,
-            "current_trimester": current_trimester,
-            "trimester_period": trimester_period,
-            "session": section_session,
-            "section_number": section_number,
-            "section_name": section_name,
-        }
-    )
-
-    return jsonify(
-        {
-            "success": True,
-            "message": "Section registered successfully.",
-        }
-    )
-
-
-@users.route("/get_sections")
-def get_sections():
-    sections = list(
-        sections_collection.find(
-            {},
-            {"_id": 0},
-        )
-    )
-
-    return jsonify({"sections": sections})
-
-
-#! Register Subjects
-@users.route("/register_subject", methods=["POST"])
-def register_subject():
-    if "user_id" not in session:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please log in first.",
-                }
-            ),
-            401,
-        )
-
-    subject_code = request.form.get("subject_code", "").strip().upper()
-    subject_name = request.form.get("subject_name", "").strip()
-    schedule = request.form.get("schedule", "").strip()
-    start_time = request.form.get("start_time", "").strip()
-    end_time = request.form.get("end_time", "").strip()
-    building = request.form.get("building", "").strip().upper()
-    room_number = request.form.get("room_number", "").strip()
-    section_name = request.form.get("section", "").strip().upper()
-
-    if not all(
-        [
-            subject_code,
-            subject_name,
-            schedule,
-            start_time,
-            end_time,
-            building,
-            room_number,
-            section_name,
-        ]
-    ):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please complete all subject fields.",
-                }
-            ),
-            400,
-        )
-
-    if building not in ["B1", "B2", "B3", "B4"]:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Invalid building selection.",
-                }
-            ),
-            400,
-        )
-
-    if not room_number.isdigit() or int(room_number) < 1:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Room number must be a positive number.",
-                }
-            ),
-            400,
-        )
-
-    if start_time >= end_time:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "End time must be later than start time.",
-                }
-            ),
-            400,
-        )
-
-    section = sections_collection.find_one({"section_name": section_name})
-
-    if not section:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "The selected section does not exist.",
-                }
-            ),
-            400,
-        )
-
-    if subjects_collection.find_one({"subject_code": subject_code}):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "This subject code is already registered.",
-                }
-            ),
-            409,
-        )
-
-    subjects_collection.insert_one(
-        {
-            "subject_code": subject_code,
-            "subject_name": subject_name,
-            "schedule": schedule,
-            "start_time": start_time,
-            "end_time": end_time,
-            "building": building,
-            "room_number": int(room_number),
-            "section": section_name,
-        }
-    )
-
-    return jsonify(
-        {
-            "success": True,
-            "message": "Subject registered successfully.",
-        }
-    )
-
-
-@users.route("/get_subjects")
-def get_subjects():
-    if "user_id" not in session:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please log in first.",
-                }
-            ),
-            401,
-        )
-
-    subjects = list(subjects_collection.find({}, {"_id": 0}))
-
-    return jsonify({"subjects": subjects})
-
-
-# TODO Add subjects testing (rename)
-@users.route("/testing_subjects", methods=["POST"])
-def testing_subjects():
-    subject = {
-        "subject_code": request.form.get("subject_code", "").strip().upper(),
-        "subject_name": request.form.get("subject_name", "").strip(),
-        "schedule": request.form.get("schedule", "").strip(),
-        "time": request.form.get("time", "").strip(),
-        "room": request.form.get("room", "").strip(),
-        "student_count": int(request.form.get("student_count", 0)),
-    }
-
-    subjects_collection.insert_one(subject)
-
-    return redirect(url_for("users.dashboard"))
-
-
 @users.route("/attendance")
 def attendance():
     if "user_id" not in session:
         return redirect(url_for("users.home"))
 
     return render_template("attendance_block.html")
-
-
-#! Admission Management
-@users.route("/admissions")
-def admissions():
-    if "user_id" not in session:
-        return redirect(url_for("users.home"))
-
-    if session.get("role") != "guidance":
-        return "Access denied.", 403
-
-    students = list(
-        students_collection.find(
-            {},
-            {
-                "password": 0,
-            },
-        ).sort("last_name", 1)
-    )
-
-    return render_template(
-        "admissions_block.html",
-        page_title="Admission Management",
-        first_name=session.get("first_name", ""),
-        students=students,
-    )
-
-
-#! View Student ORF
-@users.route("/admissions/orf/<student_id>")
-def view_orf(student_id):
-    # Require login
-    if "user_id" not in session:
-        return redirect(url_for("users.home"))
-
-    # Only Guidance can view student ORFs
-    if session.get("role") != "guidance":
-        abort(403)
-
-    from bson import ObjectId
-
-    # Validate the student ID
-    if not ObjectId.is_valid(student_id):
-        abort(404)
-
-    # Find the student
-    student = students_collection.find_one(
-        {"_id": ObjectId(student_id)},
-        {"latest_orf": 1},
-    )
-
-    if not student:
-        abort(404)
-
-    # Get the uploaded ORF filename
-    orf = student.get("latest_orf", {})
-    filename = orf.get("filename") if orf else None
-
-    if not filename or not filename.endswith(".pdf"):
-        abort(404)
-
-    # Open the PDF in the browser
-    return send_from_directory(
-        UPLOAD_FOLDER,
-        filename,
-        mimetype="application/pdf",
-        as_attachment=False,
-    )
-
-
-#! Review Student Admission
-@users.route("/admissions/review/<student_id>", methods=["POST"])
-def review_admission(student_id):
-    # Require login
-    if "user_id" not in session:
-        return redirect(url_for("users.home"))
-
-    # Only Guidance can review applications
-    if session.get("role") != "guidance":
-        abort(403)
-
-    from bson import ObjectId
-    from email_service import send_email
-
-    # Validate student ID
-    if not ObjectId.is_valid(student_id):
-        abort(404)
-
-    # Get the decision and remarks from the form
-    status = request.form.get("status", "").strip()
-    remarks = request.form.get("remarks", "").strip()
-
-    # Validate the decision
-    if status not in ["Approved", "Rejected"]:
-        abort(400)
-
-    # Require a reason for rejection
-    if status == "Rejected" and not remarks:
-        return redirect(url_for("users.admissions"))
-
-    # Find the pending student
-    student = students_collection.find_one(
-        {
-            "_id": ObjectId(student_id),
-            "admission_status": "Pending",
-        }
-    )
-
-    if not student:
-        return redirect(url_for("users.admissions"))
-
-    # Update the admission status
-    result = students_collection.update_one(
-        {
-            "_id": student["_id"],
-            "admission_status": "Pending",
-        },
-        {
-            "$set": {
-                "admission_status": status,
-                "admission_remarks": remarks if status == "Rejected" else "",
-                "reviewed_by": session.get("user_id"),
-                "reviewed_at": datetime.now(),
-            }
-        },
-    )
-
-    # Send an email only if the status was successfully updated
-    if result.modified_count == 1 and student.get("email"):
-        first_name = student.get("first_name", "Student")
-
-        if status == "Approved":
-            subject = "Admission Approved - WS1 Attendance System"
-
-            body = f"""
-Hello, {first_name}!
-
-Your admission application for the WS1 Attendance Management System
-has been approved.
-
-You can now log in to your account using your registered credentials.
-
-Thank you for registering!
-
-WS1 Attendance Management System
-"""
-
-        else:
-            subject = "Admission Update - WS1 Attendance System"
-
-            body = f"""
-Hello, {first_name}!
-
-Your admission application for the WS1 Attendance Management System
-has been rejected.
-
-Reason provided by the Guidance Office:
-{remarks}
-
-If you have questions regarding this decision, please contact the
-Guidance Office.
-
-WS1 Attendance Management System
-"""
-
-        try:
-            send_email(
-                student["email"],
-                subject,
-                body,
-            )
-
-        except Exception:
-            current_app.logger.exception(
-                "Admission status updated, but the notification email "
-                "could not be sent to student %s.",
-                student_id,
-            )
-
-    return redirect(url_for("users.admissions"))
-
-
-# TODO Pending lines
-# @users.route("/student/profile")
-# def student_profile():
-#     return render_template("student_profile.html")
-
-
-# @users.route("/settings")
-# def settings():
-#     return render_template("settings.html")
-
-
-# @users.route("/student/overview")
-# def student_overview():
-#     return render_template("student/overview.html")

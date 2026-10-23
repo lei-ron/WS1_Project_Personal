@@ -57,21 +57,23 @@
             <p>Records</p>
           </a>
 
+          {% if session.get("role") == "guidance" %}
           <a href="/program_manager">
             <img
-              src="../static/assets/icons/history_icon.svg"
+              src="../static/assets/icons/programs_icon.svg"
               alt="history_icon"
             />
-            <p>Records</p>
+            <p>Programs</p>
           </a>
 
           <a href="/admissions">
             <img
-              src="../static/assets/icons/history_icon.svg"
+              src="../static/assets/icons/admissions_icon.svg"
               alt="admissions_icon"
             />
             <p>Admissions</p>
           </a>
+          {% endif %}
         </div>
 
         <div class="bottom_ctas">

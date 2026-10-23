@@ -30,7 +30,7 @@ endblock %} {% block content %}
         <td>
           {% if student.latest_orf and student.latest_orf.filename %}
           <a
-            href="{{ url_for('users.view_orf', student_id=student._id) }}"
+            href="{{ url_for('admissions.view_orf', student_id=student._id) }}"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -43,7 +43,7 @@ endblock %} {% block content %}
           {% if student.admission_status == "Pending" %}
           <form
             method="POST"
-            action="{{ url_for('users.review_admission', student_id=student._id) }}"
+            action="{{ url_for('admissions.review_admission', student_id=student._id) }}"
           >
             <button type="submit" name="status" value="Approved">
               Approve

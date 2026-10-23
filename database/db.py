@@ -4,6 +4,8 @@ from pymongo import MongoClient
 
 load_dotenv()
 
+print("Loaded MongoDB host:", os.getenv("MONGO_URI", "").split("@")[-1].split("/")[0])
+
 MONGO_URI = os.getenv("MONGO_URI")
 
 if not MONGO_URI:
