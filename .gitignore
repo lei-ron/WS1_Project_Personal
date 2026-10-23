@@ -9,4 +9,5 @@ __pycache__/
 .env
 
 #! ORF uploads
-uploads/
+uploads/orf_documents/*.pdf
+!uploads/orf_documents/.gitkeep

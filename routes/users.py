@@ -9,6 +9,8 @@ from flask import (
     url_for,
     jsonify,
     current_app,
+    abort,
+    send_from_directory,
 )
 from database.db import (
     students_collection,
@@ -771,6 +773,48 @@ def admissions():
         page_title="Admission Management",
         first_name=session.get("first_name", ""),
         students=students,
+    )
+
+
+#! View Student ORF
+@users.route("/admissions/orf/<student_id>")
+def view_orf(student_id):
+    # Require login
+    if "user_id" not in session:
+        return redirect(url_for("users.home"))
+
+    # Only Guidance can view student ORFs
+    if session.get("role") != "guidance":
+        abort(403)
+
+    from bson import ObjectId
+
+    # Validate the student ID
+    if not ObjectId.is_valid(student_id):
+        abort(404)
+
+    # Find the student
+    student = students_collection.find_one(
+        {"_id": ObjectId(student_id)},
+        {"latest_orf": 1},
+    )
+
+    if not student:
+        abort(404)
+
+    # Get the uploaded ORF filename
+    orf = student.get("latest_orf", {})
+    filename = orf.get("filename") if orf else None
+
+    if not filename or not filename.endswith(".pdf"):
+        abort(404)
+
+    # Open the PDF in the browser
+    return send_from_directory(
+        UPLOAD_FOLDER,
+        filename,
+        mimetype="application/pdf",
+        as_attachment=False,
     )
 
 

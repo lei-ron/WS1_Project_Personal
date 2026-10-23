@@ -13,6 +13,7 @@ endblock %} {% block content %}
         <th>Program</th>
         <th>Year Level</th>
         <th>Admission Status</th>
+        <th>Documents</th>
       </tr>
     </thead>
 
@@ -24,6 +25,17 @@ endblock %} {% block content %}
         <td>{{ student.program }}</td>
         <td>Year {{ student.year_level }}</td>
         <td>{{ student.admission_status | default("Pending") }}</td>
+        <td>
+          {% if student.latest_orf and student.latest_orf.filename %}
+          <a
+            href="{{ url_for('users.view_orf', student_id=student._id) }}"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View ORF
+          </a>
+          {% else %} No document {% endif %}
+        </td>
       </tr>
       {% endfor %}
     </tbody>
