@@ -54,7 +54,6 @@ def submit():
     id_number = request.form.get("id_number", "").strip().upper()
     email = request.form.get("email", "").strip().lower()
     password = request.form.get("password", "")
-
     program = request.form.get("program", "").strip()
     year_level = request.form.get("year_level", "").strip()
     trimester = request.form.get("trimester", "").strip()
@@ -203,6 +202,7 @@ def submit():
 
     try:
         result = students_collection.insert_one(user)
+
     except Exception:
         # Remove the uploaded file if saving the database record fails
         if os.path.exists(file_path):
@@ -254,6 +254,30 @@ def login():
             else:
                 role = "guidance"
 
+        # Check student admission status before allowing login.
+        if role == "student":
+            admission_status = user.get("admission_status", "Pending")
+
+            if admission_status != "Approved":
+                if admission_status == "Rejected":
+                    message = "Your admission application was rejected."
+                    remarks = user.get("admission_remarks", "")
+                    if remarks:
+                        message += f" Reason: {remarks}"
+                else:
+                    message = "Your account is awaiting admission approval."
+
+                return (
+                    jsonify(
+                        {
+                            "success": False,
+                            "message": message,
+                        }
+                    ),
+                    403,
+                )
+
+        # Create the login session.
         session["user_id"] = str(user["_id"])
         session["id_number"] = user["id_number"]
         session["role"] = role
@@ -266,7 +290,15 @@ def login():
             }
         )
 
-    return jsonify({"success": False, "message": "Invalid ID number or password."}), 401
+    return (
+        jsonify(
+            {
+                "success": False,
+                "message": "Invalid ID number or password.",
+            }
+        ),
+        401,
+    )
 
 
 #! Dashboard
@@ -816,6 +848,118 @@ def view_orf(student_id):
         mimetype="application/pdf",
         as_attachment=False,
     )
+
+
+#! Review Student Admission
+@users.route("/admissions/review/<student_id>", methods=["POST"])
+def review_admission(student_id):
+    # Require login
+    if "user_id" not in session:
+        return redirect(url_for("users.home"))
+
+    # Only Guidance can review applications
+    if session.get("role") != "guidance":
+        abort(403)
+
+    from bson import ObjectId
+    from email_service import send_email
+
+    # Validate student ID
+    if not ObjectId.is_valid(student_id):
+        abort(404)
+
+    # Get the decision and remarks from the form
+    status = request.form.get("status", "").strip()
+    remarks = request.form.get("remarks", "").strip()
+
+    # Validate the decision
+    if status not in ["Approved", "Rejected"]:
+        abort(400)
+
+    # Require a reason for rejection
+    if status == "Rejected" and not remarks:
+        return redirect(url_for("users.admissions"))
+
+    # Find the pending student
+    student = students_collection.find_one(
+        {
+            "_id": ObjectId(student_id),
+            "admission_status": "Pending",
+        }
+    )
+
+    if not student:
+        return redirect(url_for("users.admissions"))
+
+    # Update the admission status
+    result = students_collection.update_one(
+        {
+            "_id": student["_id"],
+            "admission_status": "Pending",
+        },
+        {
+            "$set": {
+                "admission_status": status,
+                "admission_remarks": remarks if status == "Rejected" else "",
+                "reviewed_by": session.get("user_id"),
+                "reviewed_at": datetime.now(),
+            }
+        },
+    )
+
+    # Send an email only if the status was successfully updated
+    if result.modified_count == 1 and student.get("email"):
+        first_name = student.get("first_name", "Student")
+
+        if status == "Approved":
+            subject = "Admission Approved - WS1 Attendance System"
+
+            body = f"""
+Hello, {first_name}!
+
+Your admission application for the WS1 Attendance Management System
+has been approved.
+
+You can now log in to your account using your registered credentials.
+
+Thank you for registering!
+
+WS1 Attendance Management System
+"""
+
+        else:
+            subject = "Admission Update - WS1 Attendance System"
+
+            body = f"""
+Hello, {first_name}!
+
+Your admission application for the WS1 Attendance Management System
+has been rejected.
+
+Reason provided by the Guidance Office:
+{remarks}
+
+If you have questions regarding this decision, please contact the
+Guidance Office.
+
+WS1 Attendance Management System
+"""
+
+        try:
+            send_email(
+                student["email"],
+                subject,
+                body,
+            )
+
+        except Exception:
+            current_app.logger.exception(
+                "Admission status updated, but the notification email "
+                "could not be sent to student %s.",
+                student_id,
+            )
+
+    return redirect(url_for("users.admissions"))
 
 
 # TODO Pending lines

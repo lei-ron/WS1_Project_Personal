@@ -8,11 +8,11 @@ from database.db import (
     guidance_collection,
 )
 
-print("=== Create Guidance Account ===")
+print("Create Guidance Account")
 
 first_name = input("First name: ").strip().upper()
 last_name = input("Last name: ").strip().upper()
-id_number = input("Guidance ID number: ").strip().upper()
+id_number = input("ID number: ").strip().upper()
 email = input("Email: ").strip().lower()
 password = getpass("Password: ")
 confirm_password = getpass("Confirm password: ")

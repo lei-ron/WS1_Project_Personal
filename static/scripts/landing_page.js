@@ -269,18 +269,22 @@ form.addEventListener("submit", async (event) => {
 
   const result = await response.json();
 
-  form_message.textContent = result.message;
+  form_message.textContent = result.success
+    ? "Registration successful! Your admission is pending review."
+    : result.message;
+
   form_message.className = result.success
     ? "form_message success show"
     : "form_message error show";
 
   if (result.success) {
-    form_message.textContent =
-      "Registration successful! Your admission is pending review.";
-    form_message.className = "success";
-
     setTimeout(() => {
       registration_form.close();
+      form_message.classList.remove("show");
+    }, 3000);
+  } else {
+    setTimeout(() => {
+      form_message.classList.remove("show");
     }, 3000);
   }
 });
