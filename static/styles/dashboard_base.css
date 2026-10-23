@@ -59,6 +59,11 @@ body {
         align-items: center;
         text-decoration: none;
         gap: 12px;
+
+        img {
+          height: 40px;
+          width: 40px;
+        }
         p {
           display: none;
 
