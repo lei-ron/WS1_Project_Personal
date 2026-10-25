@@ -1,114 +1,89 @@
-{% extends "dashboard_base.html" %} {% block styles %}
+{% extends "dashboard_base.html" %} {% block title %}Attendance Manager{%
+endblock %} {% block content %}
 
-<link
-  rel="stylesheet"
-  href="{{ url_for('static', filename='styles/attendance.css') }}"
-/>
+<h2>Attendance Manager</h2>
 
-{% endblock %} {% block content %}
+<label for="attendance_section">Section:</label>
+<select id="attendance_section" required>
+  <option value="">Select a section</option>
+</select>
 
-<h1 id="wip">W.I.P</h1>
+<br /><br />
 
-<div class="searchsubject">
-  <div>
-    <h2>Subject:</h2>
-    <select name="subject" id="subject">
-      <option value="" hidden></option>
-      <option value="CC03">CC03</option>
-      <option value="WS1">WS1</option>
-    </select>
-  </div>
-</div>
+<label for="attendance_subject">Subject:</label>
+<select id="attendance_subject" required disabled>
+  <option value="">Select a subject</option>
+</select>
 
-<div class="manualinput">
-  <h2>Manual Input</h2>
-  <div class="status">
-    <h3>Status:</h3>
+<br /><br />
 
-    <div>
-      <div>
-        <input type="radio" name="status" id="present" />
-        <label for="present">Present</label>
-      </div>
+<form id="attendance_form">
+  <label for="student_id">Student ID:</label>
+  <input
+    type="text"
+    id="student_id"
+    name="student_id"
+    placeholder="Enter student ID"
+    autocomplete="off"
+  />
 
-      <div>
-        <input type="radio" name="status" id="late" />
-        <label for="late">Late</label>
-      </div>
+  <br /><br />
 
-      <div>
-        <input type="radio" name="status" id="absent" />
-        <label for="absent">Absent</label>
-      </div>
-    </div>
-  </div>
+  <label>
+    <input type="checkbox" id="not_registered" />
+    Not registered?
+  </label>
 
-  <!-- <div class="studentinfo">
-    <div>
-      <h3>Student Information:</h3>
-      <button>Record</button>
-    </div>
+  <br /><br />
 
-    <div>
-      <label for="idno">ID no.</label>
-      <input type="text" id="idno" />
-    </div>
+  <div id="manual_name_container" hidden>
+    <label for="manual_first_name">First Name:</label>
+    <input
+      type="text"
+      id="manual_first_name"
+      name="manual_first_name"
+      placeholder="Enter first name"
+      autocomplete="off"
+      disabled
+    />
 
-    <div>
-      <div class="name">
-        <label for="lname">Last Name:</label>
-        <input type="text" name="lname" id="lname" />
-      </div>
-      <div class="name">
-        <label for="fname">First Name:</label>
-        <input type="text" name="fname" id="fname" />
-      </div>
-    </div>
+    <br /><br />
+
+    <label for="manual_last_name">Last Name:</label>
+    <input
+      type="text"
+      id="manual_last_name"
+      name="manual_last_name"
+      placeholder="Enter last name"
+      autocomplete="off"
+      disabled
+    />
+
+    <br /><br />
   </div>
 
-  <div class="recentrecord">
-    <h3>Recent Record</h3>
-    <div>
-      <div>
-        <p class="rowhead">Surname</p>
-        <p>Felipe</p>
-        <p>Canete</p>
-        <p>Oledan</p>
-        <p>Aldana</p>
-      </div>
+  <button type="submit" id="add_student_button">Add Student</button>
+</form>
 
-      <div>
-        <p class="rowhead">Status</p>
-        <p>Late</p>
-        <p>Present</p>
-        <p>Present</p>
-        <p>Present</p>
-      </div>
+<p id="attendance_message"></p>
 
-      <div>
-        <p class="rowhead">Time-in</p>
-        <p>12:21</p>
-        <p>12:05</p>
-        <p>12:01</p>
-        <p>12:00</p>
-      </div>
-    </div>
-  </div>
-</div>
+<table>
+  <thead>
+    <tr>
+      <th>Student ID</th>
+      <th>Student Name</th>
+      <th>Time In</th>
+      <th>Status</th>
+    </tr>
+  </thead>
 
-<div class="qrcode">
-  <h3>QR Code</h3>
-  <div>
-    <p>Scan:</p>
-    <img src="" alt="Placeholder for the qrcode" />
+  <tbody id="attendance_records_body">
+    <tr>
+      <td colspan="4">No attendance records.</td>
+    </tr>
+  </tbody>
+</table>
 
-    <p>WS1: Web systems and technologies</p>
-    <p>Time: 12:00 PM - 1:30 PM</p>
-    <p>Students: 4 / 50</p>
+<script src="{{ url_for('static', filename='scripts/attendance.js') }}"></script>
 
-    <button>Download Record</button>
-  </div>
-</div> -->
-
-  {% endblock %}
-</div>
+{% endblock %}

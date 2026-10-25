@@ -52,11 +52,12 @@ block styles %}
           <div class="subject_schedule">
             <div class="schedule_info">
               <p>
-                {% set days_until = (["Monday", "Tuesday", "Wednesday",
-                "Thursday", "Friday", "Saturday",
-                "Sunday"].index(subject.schedule) - now.weekday()) % 7 %} {% if
-                days_until == 0 %} Today {% elif days_until == 1 %} Tomorrow {%
-                else %} {{ subject.schedule }} {% endif %}
+                {% if subject.schedule is defined and subject.schedule %} {% set
+                days_until = (["Monday", "Tuesday", "Wednesday", "Thursday",
+                "Friday", "Saturday", "Sunday"].index(subject.schedule) -
+                now.weekday()) % 7 %} {% if days_until == 0 %} Today {% elif
+                days_until == 1 %} Tomorrow {% else %} {{ subject.schedule }} {%
+                endif %} {% else %} Schedule unavailable {% endif %}
               </p>
 
               <p>{{ subject.start_time }} - {{ subject.end_time }}</p>
@@ -74,7 +75,7 @@ block styles %}
 
   <div class="right_column_group">
     <div class="recent_scan_history">
-      <div class="card_title"><h3>Recent Scan History</h3></div>
+      <div class="card_title"><h3>Recent Class History</h3></div>
 
       <!-- <div class="card">
         <ul class="history-list">

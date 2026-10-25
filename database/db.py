@@ -22,3 +22,7 @@ guidance_collection = db["guidance"]
 programs_collection = db["programs"]
 sections_collection = db["sections"]
 subjects_collection = db["subjects"]
+
+subject_assignments_collection = db["subject_assignments"]
+attendance_records_collection = db["attendance_records"]
+class_sessions_collection = db["class_sessions"]

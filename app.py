@@ -17,5 +17,12 @@ app.register_blueprint(users)
 app.register_blueprint(academic)
 app.register_blueprint(admissions)
 
+# print("Academic blueprint:", academic)
+# print("Registered academic routes:")
+
+# for rule in app.url_map.iter_rules():
+#     if "registration" in rule.rule or "program" in rule.rule:
+#         print(rule.rule, "->", rule.endpoint)
+
 if __name__ == "__main__":
     app.run(debug=True)

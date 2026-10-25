@@ -19,6 +19,7 @@ from database.db import (
     professors_collection,
     guidance_collection,
     subjects_collection,
+    subject_assignments_collection,
 )
 
 from werkzeug.security import (
@@ -27,6 +28,8 @@ from werkzeug.security import (
 )
 
 from werkzeug.utils import secure_filename
+
+from routes.permissions import role_required
 
 users = Blueprint("users", __name__)
 
@@ -301,6 +304,7 @@ def login():
 
 #! Dashboard
 @users.route("/dashboard")
+@role_required("professor", "guidance")
 def dashboard():
     if "user_id" not in session:
         return redirect(url_for("users.home"))
@@ -308,19 +312,24 @@ def dashboard():
     from bson import ObjectId
 
     user_id = ObjectId(session["user_id"])
+    role = session.get("role")
 
-    if session.get("role") == "student":
-        user = students_collection.find_one({"_id": user_id})
-    elif session.get("role") == "professor":
+    if role == "professor":
         user = professors_collection.find_one({"_id": user_id})
+
+        assignments = list(
+            subject_assignments_collection.find({"professor_id": user_id})
+        )
     else:
         user = guidance_collection.find_one({"_id": user_id})
+
+        # Guidance can access the page, but does not have
+        # professor-specific assignments.
+        assignments = []
 
     if not user:
         session.clear()
         return redirect(url_for("users.home"))
-
-    subjects = list(subjects_collection.find())
 
     days = {
         "Monday": 0,
@@ -333,44 +342,72 @@ def dashboard():
     }
 
     now = datetime.now()
+    upcoming_subjects = []
 
-    def get_next_class(subject):
-        subject_day = days.get(subject.get("schedule"))
+    for assignment in assignments:
+        assignment["schedule"] = ", ".join(assignment.get("days", []))
+        assignment["section"] = assignment.get("section_name", "")
 
-        if subject_day is None:
-            return datetime.max
+        assignment["building"] = assignment.get("building", "")
+        assignment["room_number"] = assignment.get("room_number", "")
 
-        try:
-            subject_time = datetime.strptime(
-                subject.get("start_time", ""), "%H:%M"
-            ).time()
-        except ValueError:
-            return datetime.max
+        for day in assignment.get("days", []):
+            if day not in days:
+                continue
 
-        days_until = (subject_day - now.weekday()) % 7
+            try:
+                start_time = datetime.strptime(
+                    assignment.get("start_time", ""),
+                    "%H:%M",
+                ).time()
 
-        next_class = datetime.combine(
-            now.date() + timedelta(days=days_until), subject_time
-        )
+                end_time = datetime.strptime(
+                    assignment.get("end_time", ""),
+                    "%H:%M",
+                ).time()
 
-        if next_class <= now:
-            next_class += timedelta(days=7)
+            except ValueError:
+                continue
 
-        return next_class
+            days_until = (days[day] - now.weekday()) % 7
 
-    upcoming_subjects = sorted(subjects, key=get_next_class)
+            next_class = datetime.combine(
+                now.date() + timedelta(days=days_until),
+                start_time,
+            )
+
+            class_end = datetime.combine(
+                now.date() + timedelta(days=days_until),
+                end_time,
+            )
+
+            if class_end <= now:
+                next_class += timedelta(days=7)
+                class_end += timedelta(days=7)
+
+            upcoming_subjects.append(
+                {
+                    **assignment,
+                    "schedule": day,
+                    "next_class": next_class,
+                    "class_end": class_end,
+                }
+            )
+
+    upcoming_subjects.sort(key=lambda subject: subject["next_class"])
 
     return render_template(
         "overview_block.html",
-        first_name=user["first_name"],
+        first_name=user.get("first_name", ""),
         page_title="Overview",
-        subjects=subjects,
+        subjects=assignments,
         upcoming_subjects=upcoming_subjects,
         now=now,
     )
 
 
 @users.route("/attendance")
+@role_required("professor", "guidance")
 def attendance():
     if "user_id" not in session:
         return redirect(url_for("users.home"))

@@ -4,6 +4,7 @@ const programs = [];
 const programForm = document.getElementById("program_form");
 const sectionForm = document.getElementById("section_form");
 const programSelect = document.getElementById("program");
+const subjectProgramsSelect = document.getElementById("subject_programs");
 const yearLevelSelect = document.getElementById("year_level");
 
 async function loadPrograms() {
@@ -17,7 +18,9 @@ async function loadPrograms() {
     }
 
     programs.length = 0;
+
     programSelect.innerHTML = '<option value="">Select Program</option>';
+    subjectProgramsSelect.innerHTML = "";
 
     result.programs.forEach((program) => {
       programs.push({
@@ -26,11 +29,15 @@ async function loadPrograms() {
         yearLevels: program.year_levels,
       });
 
-      const option = document.createElement("option");
-      option.value = program.program_code;
-      option.textContent = `${program.program_code} - ${program.program_name}`;
+      const sectionOption = document.createElement("option");
+      sectionOption.value = program.program_code;
+      sectionOption.textContent = `${program.program_code} - ${program.program_name}`;
+      programSelect.appendChild(sectionOption);
 
-      programSelect.appendChild(option);
+      const subjectOption = document.createElement("option");
+      subjectOption.value = program.program_code;
+      subjectOption.textContent = `${program.program_code} - ${program.program_name}`;
+      subjectProgramsSelect.appendChild(subjectOption);
     });
   } catch (error) {
     console.error("Error loading programs:", error);
@@ -57,7 +64,6 @@ programForm.addEventListener("submit", async function (event) {
 
     await loadPrograms();
     programForm.reset();
-
     alert(result.message);
   } catch (error) {
     console.error("Program registration error:", error);
@@ -78,10 +84,8 @@ programSelect.addEventListener("change", function () {
 
   for (let year = 1; year <= selectedProgram.yearLevels; year++) {
     const option = document.createElement("option");
-
     option.value = year;
     option.textContent = `${year}${getOrdinal(year)} Year`;
-
     yearLevelSelect.appendChild(option);
   }
 
@@ -98,6 +102,7 @@ function getOrdinal(number) {
 loadPrograms();
 
 //! Sections
+
 const currentTrimester = document.getElementById("current_trimester");
 const trimesterPeriod = document.getElementById("trimester_period");
 const sectionNumber = document.getElementById("section_number");
@@ -172,33 +177,8 @@ sectionForm.addEventListener("submit", async function (event) {
 });
 
 //! Subjects
+
 const subjectForm = document.getElementById("subject_form");
-const sectionSelect = document.getElementById("section");
-
-async function loadSections() {
-  try {
-    const response = await fetch("/get_sections");
-    const result = await response.json();
-
-    if (!response.ok) {
-      console.error("Failed to load sections:", result);
-      return;
-    }
-
-    sectionSelect.innerHTML = '<option value="">Select Section</option>';
-
-    result.sections.forEach((section) => {
-      const option = document.createElement("option");
-
-      option.value = section.section_name;
-      option.textContent = section.section_name;
-
-      sectionSelect.appendChild(option);
-    });
-  } catch (error) {
-    console.error("Error loading sections:", error);
-  }
-}
 
 subjectForm.addEventListener("submit", async function (event) {
   event.preventDefault();
@@ -212,14 +192,15 @@ subjectForm.addEventListener("submit", async function (event) {
     });
 
     const responseText = await response.text();
-
     let result;
 
     try {
       result = JSON.parse(responseText);
     } catch {
       console.error("Server returned a non-JSON response:", responseText);
-      alert("The server returned an unexpected response. Check the Flask terminal and browser console.");
+      alert(
+        "The server returned an unexpected response. Check the Flask terminal and browser console."
+      );
       return;
     }
 
@@ -236,4 +217,157 @@ subjectForm.addEventListener("submit", async function (event) {
   }
 });
 
-loadSections();
+//! Subject Assignments
+
+const assignmentForm = document.getElementById("subject_assignment_form");
+const assignmentSection = document.getElementById("assignment_section");
+const assignmentSubject = document.getElementById("assignment_subject");
+const assignmentProfessor = document.getElementById("assignment_professor");
+
+async function loadAssignmentSections() {
+  try {
+    const response = await fetch("/get_sections");
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Failed to load sections:", result);
+      return;
+    }
+
+    assignmentSection.innerHTML =
+      '<option value="">Select Section</option>';
+
+    result.sections.forEach((section) => {
+      const option = document.createElement("option");
+      option.value = section.section_name;
+      option.textContent = section.section_name;
+      assignmentSection.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error loading assignment sections:", error);
+  }
+}
+
+async function loadAssignmentProfessors() {
+  try {
+    const response = await fetch("/get_assignment_professors");
+    const result = await response.json();
+
+    if (!response.ok) {
+      console.error("Failed to load professors:", result);
+      return;
+    }
+
+    assignmentProfessor.innerHTML =
+      '<option value="">Select Professor</option>';
+
+    result.professors.forEach((professor) => {
+      const option = document.createElement("option");
+      option.value = professor._id;
+      option.textContent =
+        `${professor.first_name} ${professor.last_name}`;
+      assignmentProfessor.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Error loading professors:", error);
+  }
+}
+
+async function loadAssignmentSubjects(sectionName) {
+  assignmentSubject.innerHTML =
+    '<option value="">Loading Subjects...</option>';
+
+  assignmentSubject.disabled = true;
+
+  if (!sectionName) {
+    assignmentSubject.innerHTML =
+      '<option value="">Select Section First</option>';
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `/get_section_subjects?section_name=${encodeURIComponent(sectionName)}`
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      assignmentSubject.innerHTML =
+        '<option value="">Failed to Load Subjects</option>';
+
+      alert(result.message || "Failed to load subjects.");
+      return;
+    }
+
+    assignmentSubject.innerHTML =
+      '<option value="">Select Subject</option>';
+
+    result.subjects.forEach((subject) => {
+      const option = document.createElement("option");
+      option.value = subject.subject_code;
+      option.textContent =
+        `${subject.subject_code} - ${subject.subject_name}`;
+      assignmentSubject.appendChild(option);
+    });
+
+    assignmentSubject.disabled = result.subjects.length === 0;
+
+    if (result.subjects.length === 0) {
+      assignmentSubject.innerHTML =
+        '<option value="">No Subjects Registered for This Program</option>';
+    }
+  } catch (error) {
+    console.error("Error loading assignment subjects:", error);
+
+    assignmentSubject.innerHTML =
+      '<option value="">Failed to Load Subjects</option>';
+  }
+}
+
+assignmentSection.addEventListener("change", function () {
+  loadAssignmentSubjects(assignmentSection.value);
+});
+
+assignmentForm.addEventListener("submit", async function (event) {
+  event.preventDefault();
+
+  const selectedDays = assignmentForm.querySelectorAll(
+    'input[name="days"]:checked'
+  );
+
+  if (selectedDays.length === 0) {
+    alert("Please select at least one day.");
+    return;
+  }
+
+  const formData = new FormData(assignmentForm);
+
+  try {
+    const response = await fetch("/register_subject_assignment", {
+      method: "POST",
+      body: formData,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      alert(result.message || "Failed to register subject assignment.");
+      return;
+    }
+
+    alert(result.message);
+    assignmentForm.reset();
+
+    assignmentSubject.innerHTML =
+      '<option value="">Select Section First</option>';
+
+    assignmentSubject.disabled = true;
+  } catch (error) {
+    console.error("Subject assignment error:", error);
+    alert("Unable to register assignment. Check your connection or server.");
+  }
+});
+
+loadAssignmentSections();
+loadAssignmentProfessors();

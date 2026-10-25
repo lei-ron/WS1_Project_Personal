@@ -5,8 +5,8 @@ const login_cta = document.getElementById("login_cta");
 const registration_form = document.getElementById("registration_form");
 const login_form = document.getElementById("login_form");
 
-const register_form_swap = document.getElementById("form_register_cta")
-const login_form_swap = document.getElementById("form_login_cta")
+const register_form_swap = document.getElementById("form_register_cta");
+const login_form_swap = document.getElementById("form_login_cta");
 
 register_cta.addEventListener("click", function () {
   login_form.close();
@@ -86,7 +86,7 @@ let sections_data = [];
 
 async function loadPrograms() {
   try {
-    const response = await fetch("/get_programs");
+    const response = await fetch("/get_registration_programs");
 
     if (!response.ok) {
       throw new Error("Failed to load programs.");
@@ -96,7 +96,7 @@ async function loadPrograms() {
     programs_data = result.programs;
 
     program_select.replaceChildren(
-      new Option("Select Program", "", true, true)
+      new Option("Select Program", "", true, true),
     );
 
     program_select.options[0].disabled = true;
@@ -104,7 +104,7 @@ async function loadPrograms() {
     programs_data.forEach((program) => {
       const option = new Option(
         `${program.program_code} - ${program.program_name}`,
-        program.program_code
+        program.program_code,
       );
 
       program_select.add(option);
@@ -133,13 +133,12 @@ section_select.disabled = true;
 id_number.pattern = "[A-Za-z]{2}[0-9]{9}";
 id_number.minLength = 11;
 id_number.maxLength = 11;
-id_number.title =
-  "Student ID must contain 2 letters followed by 9 digits.";
+id_number.title = "Student ID must contain 2 letters followed by 9 digits.";
 
 //! Load registered sections
 async function loadSections() {
   try {
-    const response = await fetch("/get_sections");
+    const response = await fetch("/get_registration_sections");
 
     if (!response.ok) {
       throw new Error("Failed to load sections.");
@@ -155,11 +154,11 @@ async function loadSections() {
 program_select.addEventListener("change", function () {
   const selected_program = program_select.value;
   const program = programs_data.find(
-    (item) => item.program_code === selected_program
+    (item) => item.program_code === selected_program,
   );
 
   year_level_select.replaceChildren(
-    new Option("Select a year level", "", true, true)
+    new Option("Select a year level", "", true, true),
   );
 
   year_level_select.options[0].disabled = true;
@@ -169,7 +168,7 @@ program_select.addEventListener("change", function () {
   trimester_select.disabled = true;
 
   section_select.replaceChildren(
-    new Option("Select a section", "", true, true)
+    new Option("Select a section", "", true, true),
   );
   section_select.options[0].disabled = true;
   section_select.disabled = true;
@@ -198,7 +197,7 @@ function updateTrimesters() {
     new Option("Select Trimester", "", true, true),
     new Option("Trimester 1", "1"),
     new Option("Trimester 2", "2"),
-    new Option("Trimester 3", "3")
+    new Option("Trimester 3", "3"),
   );
 
   trimester_select.options[0].disabled = true;
@@ -213,7 +212,7 @@ function updateSections() {
   const selected_trimester = Number(trimester_select.value);
 
   section_select.replaceChildren(
-  new Option("Select a section", "", true, true)
+    new Option("Select a section", "", true, true),
   );
   section_select.options[0].disabled = true;
 
@@ -225,13 +224,11 @@ function updateSections() {
     (section) =>
       section.program_code === selected_program &&
       Number(section.year_level) === selected_year &&
-      Number(section.current_trimester) === selected_trimester
+      Number(section.current_trimester) === selected_trimester,
   );
 
   matching_sections.forEach((section) => {
-    section_select.add(
-      new Option(section.section_name, section.section_name)
-    );
+    section_select.add(new Option(section.section_name, section.section_name));
   });
 }
 
@@ -240,7 +237,7 @@ year_level_select.addEventListener("change", function () {
   trimester_select.disabled = !year_level_select.value;
 
   section_select.replaceChildren(
-    new Option("Select a section", "", true, true)
+    new Option("Select a section", "", true, true),
   );
   section_select.options[0].disabled = true;
   section_select.disabled = true;
@@ -310,12 +307,11 @@ form2.addEventListener("submit", async (event) => {
 
   if (result.success) {
     setTimeout(() => {
-      window.location.href = "/dashboard"
+      window.location.href = "/dashboard";
     }, 3000);
   } else {
-
     setTimeout(() => {
-      login_message.classList.remove("show")
+      login_message.classList.remove("show");
     }, 3000);
   }
 });
