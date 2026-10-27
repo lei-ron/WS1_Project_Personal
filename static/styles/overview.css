@@ -1,7 +1,6 @@
 .cards_container {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 34px 98px 64px 44px;
   gap: 24px;
 
   height: 100%;
@@ -26,7 +25,6 @@
     .recent_scan_history {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
-      background-color: #fff;
       background-color: var(--surface-color);
       border-radius: 12px;
       box-shadow: 3px 3px 0 #00000045;

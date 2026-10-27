@@ -1,0 +1,141 @@
+{% extends "dashboard_base.html" %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='styles/management.css') }}"
+/>
+{% endblock %} {% block title %}Sections Management{% endblock %} {% block
+content %}
+
+<div class="container_background">
+  <section>
+    <div class="title_topbar">
+      <h2>Section Registration</h2>
+
+      <button type="submit" form="section_form">Register</button>
+    </div>
+
+    <form id="section_form">
+      <div class="form_container">
+        <div class="form_group form_group3">
+          <div class="form_single">
+            <label for="program">Program:</label>
+            <select id="program" name="program" required>
+              <option value="">Select Program</option>
+            </select>
+          </div>
+
+          <div class="form_single">
+            <label for="learning_modality">Learning Modality:</label>
+            <select id="learning_modality" name="learning_modality" required>
+              <option value="">Select Modality</option>
+              <option value="LF">Limited Face-to-Face</option>
+              <option value="OL">Online Learning</option>
+            </select>
+          </div>
+
+          <div class="form_single">
+            <label for="campus">Campus:</label>
+            <select id="campus" name="campus" required>
+              <option value="">Select Campus</option>
+              <option value="CA">Cainta</option>
+              <option value="SA">San Mateo</option>
+              <option value="CO">Cogeo</option>
+              <option value="AU">Antipolo</option>
+              <option value="TA">Taytay</option>
+              <option value="BN">Binangonan</option>
+            </select>
+          </div>
+
+          <div class="form_single">
+            <label for="year_level">Year Level:</label>
+            <select id="year_level" name="year_level" required>
+              <option value="">Select Year Level</option>
+            </select>
+          </div>
+
+          <div class="form_single">
+            <label for="current_trimester">Current Trimester Period:</label>
+            <select id="current_trimester" name="current_trimester" required>
+              <option value="">Select Trimester</option>
+              <option value="1">1st Trimester</option>
+              <option value="2">2nd Trimester</option>
+              <option value="3">3rd Trimester</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form_group form_group4">
+          <div class="form_single">
+            <label for="trimester_period">Trimester Period:</label>
+            <select id="trimester_period" name="trimester_period" required>
+              <option value="">Select Trimester Period</option>
+              <option value="1">1st Trimester</option>
+              <option value="2">2nd Trimester</option>
+              <option value="3">3rd Trimester</option>
+            </select>
+          </div>
+
+          <div class="form_single">
+            <label for="session">Session:</label>
+            <select id="session" name="session" required>
+              <option value="">Select Session</option>
+              <option value="M">Morning</option>
+              <option value="N">Noon</option>
+              <option value="A">Afternoon</option>
+              <option value="E">Evening</option>
+            </select>
+          </div>
+
+          <div class="form_single">
+            <label for="section_number">Number:</label>
+            <input
+              type="number"
+              id="section_number"
+              name="section_number"
+              min="1"
+              max="999"
+              oninput="
+                if (this.value.length > 3) this.value = this.value.slice(0, 3);
+              "
+              placeholder="e.g. 9"
+              required
+            />
+          </div>
+
+          <div class="form_single">
+            <label for="section_name">Generated Section Name:</label>
+            <input
+              type="text"
+              id="section_name"
+              name="section_name"
+              readonly
+              onfocus="this.blur()"
+              placeholder="Complete the fields above"
+            />
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <table>
+      <thead>
+        <tr class="program_tr">
+          <th>Program</th>
+          <th>Section Name</th>
+          <th>Year Level</th>
+        </tr>
+      </thead>
+      <tbody id="section_list">
+        <tr>
+          <td colspan="3">Loading sections...</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<script src="{{ url_for('static', filename='scripts/sections_manager.js') }}"></script>
+
+{% endblock %}

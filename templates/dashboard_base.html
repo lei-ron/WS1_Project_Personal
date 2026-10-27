@@ -61,12 +61,28 @@
 
           {% endif %} {% if session.get("role") == "guidance" %}
 
-          <a href="/program_manager">
+          <a href="/programs_manager">
             <img
               src="../static/assets/icons/programs_icon.svg"
-              alt="history_icon"
+              alt="programs_icon"
             />
             <p>Programs</p>
+          </a>
+
+          <a href="/subjects_manager">
+            <img
+              src="../static/assets/icons/subjects_icon.svg"
+              alt="subjects_icon"
+            />
+            <p>Subjects</p>
+          </a>
+
+          <a href="/sections_manager">
+            <img
+              src="../static/assets/icons/sections_icon.svg"
+              alt="sections_icon"
+            />
+            <p>Sections</p>
           </a>
 
           <a href="/admissions">

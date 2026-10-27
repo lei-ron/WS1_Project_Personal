@@ -1,0 +1,78 @@
+{% extends "dashboard_base.html" %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='styles/management.css') }}"
+/>
+{% endblock %} {% block title %}Programs Management{% endblock %} {% block
+content %}
+
+<div class="container_background">
+  <section>
+    <div class="title_topbar">
+      <h2>Program Registration</h2>
+
+      <button type="submit" form="program_form">Register</button>
+    </div>
+
+    <form id="program_form">
+      <div class="form_container">
+        <div class="form_group form_group1">
+          <div class="form_single">
+            <label for="program_code">Code:</label>
+            <input
+              type="text"
+              id="program_code"
+              name="program_code"
+              placeholder="e.g. BSCS"
+              required
+            />
+          </div>
+
+          <div class="form_single">
+            <label for="program_name">Name:</label>
+            <input
+              type="text"
+              id="program_name"
+              name="program_name"
+              placeholder="e.g. Computer Science"
+              required
+            />
+          </div>
+
+          <div class="form_single">
+            <label for="year_levels">Year levels:</label>
+            <select id="year_levels" name="year_levels" required>
+              <option value="">Select Year Levels</option>
+              <option value="1">1 Year</option>
+              <option value="2">2 Years</option>
+              <option value="3">3 Years</option>
+              <option value="4">4 Years</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <table>
+      <thead>
+        <tr class>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Year Levels</th>
+        </tr>
+      </thead>
+
+      <tbody id="program_list">
+        <tr>
+          <td colspan="3">Loading programs...</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<script src="{{ url_for('static', filename='scripts/programs_manager.js') }}"></script>
+
+{% endblock %}

@@ -126,6 +126,10 @@ body {
         text-align: center;
       }
     }
+
+    main {
+      padding: 34px 98px 64px 44px;
+    }
   }
 }
 

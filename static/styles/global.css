@@ -17,12 +17,22 @@
   --main-font: "Inter", sans-serif;
   --alt-font: "Poppins", sans-serif;
   --header-font: "Fraunces", serif;
+
+  --scrollbar-opacity: 70%;
 }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(
+      in srgb,
+      var(--border-color),
+      transparent var(--scrollbar-opacity)
+    )
+    transparent;
 }
 
 html {

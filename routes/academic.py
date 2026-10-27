@@ -33,30 +33,42 @@ def to_manila_time(dt):
 
 
 #! Programs Manager
-@academic.route("/program_manager")
+
+@academic.route("/programs_manager")
 @role_required("guidance")
-def program_manager():
-    if "user_id" not in session:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please log in first.",
-                }
-            ),
-            401,
-        )
-
-    programs = list(programs_collection.find({}, {"_id": 0}))
-
+def programs_manager():
     from flask import render_template
 
     return render_template(
-        "program_manager_block.html",
-        page_title="Program Manager",
-        programs=programs,
+        "programs_manager_block.html",
+        page_title="Programs Manager",
     )
 
+
+#! Sections Manager
+
+@academic.route("/sections_manager")
+@role_required("guidance")
+def sections_manager():
+    from flask import render_template
+
+    return render_template(
+        "sections_manager_block.html",
+        page_title="Sections Manager",
+    )
+
+
+#! Subjects Manager
+
+@academic.route("/subjects_manager")
+@role_required("guidance")
+def subjects_manager():
+    from flask import render_template
+
+    return render_template(
+        "subjects_manager_block.html",
+        page_title="Subjects Manager",
+    )
 
 #! Register Program
 @academic.route("/register_program", methods=["POST"])

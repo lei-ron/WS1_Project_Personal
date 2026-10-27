@@ -1,0 +1,177 @@
+{% extends "dashboard_base.html" %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='styles/management.css') }}"
+/>
+{% endblock %} {% block title %}Subjects Management{% endblock %} {% block
+content %}
+
+<div class="container_background">
+  <section>
+    <div class="title_topbar">
+      <h2>Subject Registration</h2>
+
+      <button type="submit" form="subject_form">Register</button>
+    </div>
+
+    <form id="subject_form">
+      <div class="form_container">
+        <div class="form_group form_group2">
+          <div class="form_single">
+            <label for="subject_programs">Programs:</label>
+
+            <select
+              id="subject_programs"
+              name="program_codes"
+              multiple
+              required
+            ></select>
+          </div>
+
+          <div class="form_single">
+            <label for="subject_code">Code:</label>
+            <input
+              type="text"
+              id="subject_code"
+              name="subject_code"
+              placeholder="e.g. CS101"
+              required
+            />
+          </div>
+
+          <div class="form_single">
+            <label for="subject_name">Name:</label>
+            <input
+              type="text"
+              id="subject_name"
+              name="subject_name"
+              placeholder="e.g. Introduction to Computing"
+              required
+            />
+          </div>
+        </div>
+      </div>
+    </form>
+  </section>
+
+  <section>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Name</th>
+          <th>Programs</th>
+        </tr>
+      </thead>
+
+      <tbody id="subject_list">
+        <tr>
+          <td colspan="3">Loading subjects...</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<form id="subject_assignment_form">
+  <h2>Assign Subject</h2>
+
+  <div>
+    <label for="assignment_section">Section:</label>
+    <select id="assignment_section" name="section_name" required>
+      <option value="">Select Section</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="assignment_subject">Subject:</label>
+    <select id="assignment_subject" name="subject_code" required disabled>
+      <option value="">Select Section First</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="assignment_professor">Professor:</label>
+    <select id="assignment_professor" name="professor_id" required>
+      <option value="">Select Professor</option>
+    </select>
+  </div>
+
+  <fieldset>
+    <legend>Days:</legend>
+
+    <label>
+      <input type="checkbox" name="days" value="Monday" />
+      Monday
+    </label>
+
+    <label>
+      <input type="checkbox" name="days" value="Tuesday" />
+      Tuesday
+    </label>
+
+    <label>
+      <input type="checkbox" name="days" value="Wednesday" />
+      Wednesday
+    </label>
+
+    <label>
+      <input type="checkbox" name="days" value="Thursday" />
+      Thursday
+    </label>
+
+    <label>
+      <input type="checkbox" name="days" value="Friday" />
+      Friday
+    </label>
+
+    <label>
+      <input type="checkbox" name="days" value="Saturday" />
+      Saturday
+    </label>
+
+    <label>
+      <input type="checkbox" name="days" value="Sunday" />
+      Sunday
+    </label>
+  </fieldset>
+
+  <div>
+    <label for="assignment_start_time">Time In:</label>
+    <input type="time" id="assignment_start_time" name="start_time" required />
+  </div>
+
+  <div>
+    <label for="assignment_end_time">Time Out:</label>
+    <input type="time" id="assignment_end_time" name="end_time" required />
+  </div>
+
+  <div>
+    <label for="assignment_building">Building:</label>
+    <select id="assignment_building" name="building" required>
+      <option value="">Select Building</option>
+      <option value="B1">Building 1 (B1)</option>
+      <option value="B2">Building 2 (B2)</option>
+      <option value="B3">Building 3 (B3)</option>
+      <option value="B4">Building 4 (B4)</option>
+    </select>
+  </div>
+
+  <div>
+    <label for="assignment_room_number">Room Number:</label>
+    <input
+      type="number"
+      id="assignment_room_number"
+      name="room_number"
+      min="1"
+      step="1"
+      required
+    />
+  </div>
+
+  <button type="submit">Assign Subject</button>
+</form>
+
+<script src="{{ url_for('static', filename='scripts/subjects_manager.js') }}"></script>
+
+{% endblock %}
