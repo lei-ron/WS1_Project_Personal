@@ -1,3 +1,13 @@
+.main_container {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-auto-rows: 1fr min-content;
+
+  gap: 16px;
+  min-height: 0;
+  height: 100%;
+}
+
 .container_background {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -50,6 +60,8 @@
       display: grid;
       gap: 16px;
 
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+
       .form_single {
         display: flex;
         flex-direction: column;
@@ -88,6 +100,33 @@
       }
     }
 
+    #subject_assignment_form {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .form_days_fieldset {
+        fieldset {
+          border: none;
+
+          legend {
+            font-family: var(--main-font);
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--muted-text-color);
+          }
+
+          .days_checkboxes {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            padding: 8px 0;
+            border-top: 1px solid var(--muted-text-color);
+          }
+        }
+      }
+    }
+
+    /* 
     .form_group1 {
       grid-template-columns: 1fr 2fr 1fr;
     }
@@ -102,7 +141,7 @@
 
     .form_group4 {
       grid-template-columns: repeat(4, 1fr);
-    }
+    } */
   }
 
   table {
@@ -120,7 +159,7 @@
       gap: 16px;
       padding: 0 24px;
 
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
     }
 
     th,
@@ -160,7 +199,7 @@
   }
 }
 
-#subject_programs_container {
+/* #subject_programs_container {
   position: relative;
 }
 
@@ -174,7 +213,6 @@
   width: 100%;
   box-sizing: border-box;
 }
-/* 
 #programs_dropdown {
   position: absolute;
   top: 100%;
@@ -213,4 +251,4 @@
 
 #programs_options button:hover {
   background: var(--border-color, #eee);
-} */
+}  */

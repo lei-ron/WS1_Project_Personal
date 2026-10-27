@@ -9,7 +9,7 @@
 
     {% block styles %}{% endblock %}
 
-    <title>Dashboard</title>
+    <title>{% block title %}Dashboard{% endblock %}</title>
   </head>
   <body>
     <!--* Dashboard Container -->
@@ -69,20 +69,20 @@
             <p>Programs</p>
           </a>
 
-          <a href="/subjects_manager">
-            <img
-              src="../static/assets/icons/subjects_icon.svg"
-              alt="subjects_icon"
-            />
-            <p>Subjects</p>
-          </a>
-
           <a href="/sections_manager">
             <img
               src="../static/assets/icons/sections_icon.svg"
               alt="sections_icon"
             />
             <p>Sections</p>
+          </a>
+
+          <a href="/subjects_manager">
+            <img
+              src="../static/assets/icons/subjects_icon.svg"
+              alt="subjects_icon"
+            />
+            <p>Subjects</p>
           </a>
 
           <a href="/admissions">

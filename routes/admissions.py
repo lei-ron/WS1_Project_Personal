@@ -49,7 +49,7 @@ def admissions_page():
 
     return render_template(
         "admissions_block.html",
-        page_title="Admission Management",
+        page_title="Admissions",
         first_name=session.get("first_name", ""),
         students=students,
     )

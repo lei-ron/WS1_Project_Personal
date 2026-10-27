@@ -1,86 +1,94 @@
-{% extends "dashboard_base.html" %} {% block title %}Admission Management{%
-endblock %} {% block content %}
+{% extends "dashboard_base.html" %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='styles/management.css') }}"
+/>
+{% endblock %} {% block title %}Admissions{% endblock %} {% block content %}
 
-<section class="admissions_container">
-  <h2>Student Registrations</h2>
+<div class="container_background">
+  <section class="admissions_container">
+    <div class="title_topbar">
+      <h2>Student Registrations</h2>
+    </div>
 
-  {% if students %}
-  <table>
-    <thead>
-      <tr>
-        <th>Student Name</th>
-        <th>Student ID</th>
-        <th>Program</th>
-        <th>Year Level</th>
-        <th>Admission Status</th>
-        <th>Documents</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
+    {% if students %}
+    <table>
+      <thead>
+        <tr>
+          <th>Student Name</th>
+          <th>Student ID</th>
+          <th>Program</th>
+          <th>Year Level</th>
+          <th>Admission Status</th>
+          <th>Documents</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
 
-    <tbody>
-      {% for student in students %}
-      <tr>
-        <td>{{ student.first_name }} {{ student.last_name }}</td>
-        <td>{{ student.id_number }}</td>
-        <td>{{ student.program }}</td>
-        <td>Year {{ student.year_level }}</td>
-        <td>{{ student.admission_status | default("Pending") }}</td>
+      <tbody>
+        {% for student in students %}
+        <tr>
+          <td>{{ student.first_name }} {{ student.last_name }}</td>
+          <td>{{ student.id_number }}</td>
+          <td>{{ student.program }}</td>
+          <td>Year {{ student.year_level }}</td>
+          <td>{{ student.admission_status | default("Pending") }}</td>
 
-        <td>
-          {% if student.latest_orf and student.latest_orf.filename %}
-          <a
-            href="{{ url_for('admissions.view_orf', student_id=student._id) }}"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View ORF
-          </a>
-          {% else %} No document {% endif %}
-        </td>
-
-        <td>
-          {% if student.admission_status == "Pending" %}
-          <form
-            method="POST"
-            action="{{ url_for('admissions.review_admission', student_id=student._id) }}"
-          >
-            <button type="submit" name="status" value="Approved">
-              Approve
-            </button>
-
-            <br />
-
-            <textarea
-              name="remarks"
-              placeholder="Reason for rejection"
-            ></textarea>
-
-            <br />
-
-            <button
-              type="submit"
-              name="status"
-              value="Rejected"
-              onclick="
-                return confirm(
-                  'Are you sure you want to reject this application?',
-                );
-              "
+          <td>
+            {% if student.latest_orf and student.latest_orf.filename %}
+            <a
+              href="{{ url_for('admissions.view_orf', student_id=student._id) }}"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              Reject
-            </button>
-          </form>
-          {% else %} Reviewed {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+              View ORF
+            </a>
+            {% else %} No document {% endif %}
+          </td>
 
-  {% else %}
-  <p>No student registrations found.</p>
-  {% endif %}
-</section>
+          <td>
+            {% if student.admission_status == "Pending" %}
+            <form
+              method="POST"
+              action="{{ url_for('admissions.review_admission', student_id=student._id) }}"
+            >
+              <button type="submit" name="status" value="Approved">
+                Approve
+              </button>
+
+              <br />
+
+              <textarea
+                name="remarks"
+                placeholder="Reason for rejection"
+              ></textarea>
+
+              <br />
+
+              <button
+                type="submit"
+                name="status"
+                value="Rejected"
+                onclick="
+                  return confirm(
+                    'Are you sure you want to reject this application?',
+                  );
+                "
+              >
+                Reject
+              </button>
+            </form>
+            {% else %} Reviewed {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    {% else %}
+    <p>No student registrations found.</p>
+    {% endif %}
+  </section>
+</div>
 
 {% endblock %}
