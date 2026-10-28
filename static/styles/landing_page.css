@@ -156,7 +156,7 @@ header {
       #login_form {
         grid-template-columns: 1fr 1fr;
 
-        height: 760px;
+        height: 740px;
         width: 960px;
         border: none;
         border-radius: 12px;
@@ -229,6 +229,12 @@ header {
           }
 
           form {
+            .login_input_containter {
+              display: grid;
+              grid-template-rows: min-content;
+              gap: 12px;
+            }
+
             .form_group_container {
               display: grid;
               grid-template-columns: 1fr 1fr;
@@ -324,7 +330,8 @@ header {
               border-radius: 6px 6px 0 6px;
             }
 
-            #signup_button {
+            #signup_button,
+            #submit_login_cta {
               background: var(--primary-color);
               border-radius: 0 6px 6px 6px;
             }

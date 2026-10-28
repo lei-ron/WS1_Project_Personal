@@ -9,6 +9,7 @@ from werkzeug.security import check_password_hash
 users = Blueprint("users", __name__)
 
 
+#! Landing Page
 @users.route("/")
 def home():
     return render_template("index.html")
@@ -29,7 +30,7 @@ def login():
         user = guidance_collection.find_one({"id_number": id_number})
 
     if user and check_password_hash(user["password"], password):
-        role = user.get("role")
+        role = (user.get("role") or "").strip().lower()
 
         # Support existing accounts without a role field.
         if not role:
@@ -37,7 +38,7 @@ def login():
                 role = "student"
             elif professors_collection.find_one({"_id": user["_id"]}):
                 role = "professor"
-            else:
+            elif guidance_collection.find_one({"_id": user["_id"]}):
                 role = "guidance"
 
         # Check student admission status before allowing login.
@@ -80,8 +81,8 @@ def login():
             message = "Login successful! Redirecting to overview."
 
         elif role == "guidance":
-            redirect_url = url_for("dashboard.dashboard_page")
-            message = "Login successful! Redirecting to overview."
+            redirect_url = url_for("admissions.admissions_page")
+            message = "Login successful! Redirecting to admissions."
 
         else:
             return jsonify({"success": False, "message": "Invalid account role."}), 403
@@ -93,3 +94,8 @@ def login():
                 "redirect_url": redirect_url,
             }
         )
+
+    return (
+        jsonify({"success": False, "message": "Invalid ID number or password."}),
+        401,
+    )

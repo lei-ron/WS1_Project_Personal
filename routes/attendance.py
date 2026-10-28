@@ -366,25 +366,101 @@ def scan_attendance_qr():
 
 
 #! Get attendance
+def get_schedule_indicator(assignment, now):
+    today = now.strftime("%Y-%m-%d")
+    current_day = now.strftime("%A")
+
+    tomorrow = now + timedelta(days=1)
+    tomorrow_day = tomorrow.strftime("%A")
+
+    days = assignment.get("days", [])
+
+    try:
+        start_time = datetime.strptime(assignment["start_time"], "%H:%M").time()
+
+        end_time = datetime.strptime(assignment["end_time"], "%H:%M").time()
+    except (KeyError, TypeError, ValueError):
+        current_app.logger.exception(
+            "Invalid schedule for assignment %s",
+            assignment.get("_id"),
+        )
+        return "", 24 * 60
+
+    start_minutes = start_time.hour * 60 + start_time.minute
+
+    # Check today's class first.
+    if current_day in days:
+        scheduled_start = now.replace(
+            hour=start_time.hour,
+            minute=start_time.minute,
+            second=0,
+            microsecond=0,
+        )
+
+        scheduled_end = now.replace(
+            hour=end_time.hour,
+            minute=end_time.minute,
+            second=0,
+            microsecond=0,
+        )
+
+        class_session = class_sessions_collection.find_one(
+            {
+                "assignment_id": assignment["_id"],
+                "attendance_date": today,
+            }
+        )
+
+        # The scheduled end time determines whether the class has ended.
+        if now >= scheduled_end:
+            return "Ended", start_minutes
+
+        # Attendance has been activated and the class is still within
+        # its scheduled period.
+        if (
+            class_session
+            and class_session.get("qr_active")
+            and class_session.get("status") == "Ongoing"
+        ):
+            return "Started", start_minutes
+
+        # The class period has begun, but attendance has not been activated.
+        if now >= scheduled_start:
+            return "Ongoing", start_minutes
+
+        return "Today", start_minutes
+
+    # If there is no class today, check tomorrow.
+    if tomorrow_day in days:
+        return "Tomorrow", start_minutes
+
+    return "", start_minutes
+
+
 @attendance.route("/get_attendance_sections", methods=["GET"])
 @role_required("professor", "guidance")
 def get_attendance_sections():
-    role = session.get("role")
     query = {}
 
-    if role == "professor":
+    if session.get("role") == "professor":
         try:
             query["professor_id"] = ObjectId(session["user_id"])
         except (KeyError, TypeError, ValueError):
             return jsonify({"message": "Invalid professor session."}), 401
 
     assignments = list(subject_assignments_collection.find(query))
-
-    now = datetime.now(ZoneInfo("Asia/Manila"))
-    today = now.strftime("%Y-%m-%d")
-    current_day = now.strftime("%A")
+    now = datetime.now(MANILA_TZ)
 
     section_statuses = {}
+
+    priority = {
+        "Started": 0,
+        "Ongoing": 1,
+        "Today": 2,
+        "Tomorrow": 3,
+        "Ended": 4,
+        "": 5,
+    }
 
     for assignment in assignments:
         section_name = assignment.get("section_name")
@@ -392,54 +468,10 @@ def get_attendance_sections():
         if not section_name:
             continue
 
-        status = "Upcoming"
-        start_minutes = 24 * 60
-
-        if current_day in assignment.get("days", []):
-            try:
-                start = datetime.strptime(assignment["start_time"], "%H:%M").time()
-
-                end = datetime.strptime(assignment["end_time"], "%H:%M").time()
-
-                start_datetime = now.replace(
-                    hour=start.hour,
-                    minute=start.minute,
-                    second=0,
-                    microsecond=0,
-                )
-
-                end_datetime = now.replace(
-                    hour=end.hour,
-                    minute=end.minute,
-                    second=0,
-                    microsecond=0,
-                )
-
-                start_minutes = start.hour * 60 + start.minute
-
-                class_session = class_sessions_collection.find_one(
-                    {
-                        "assignment_id": assignment["_id"],
-                        "attendance_date": today,
-                    }
-                )
-
-                if now >= end_datetime:
-                    status = "Completed"
-
-                elif class_session and now >= start_datetime:
-                    status = "Ongoing"
-
-                elif now >= start_datetime:
-                    # The scheduled time has started, but no session
-                    # has been started by a valid attendance scan.
-                    status = "Upcoming"
-
-            except (KeyError, TypeError, ValueError):
-                current_app.logger.exception(
-                    "Invalid schedule for assignment %s",
-                    assignment.get("_id"),
-                )
+        status, start_minutes = get_schedule_indicator(
+            assignment,
+            now,
+        )
 
         if section_name not in section_statuses:
             section_statuses[section_name] = {
@@ -447,32 +479,20 @@ def get_attendance_sections():
                 "status": status,
                 "start_minutes": start_minutes,
             }
-        else:
-            existing = section_statuses[section_name]
+            continue
 
-            priority = {
-                "Ongoing": 0,
-                "Upcoming": 1,
-                "Completed": 2,
-            }
+        existing = section_statuses[section_name]
 
-            if priority[status] < priority[existing["status"]]:
-                existing["status"] = status
-                existing["start_minutes"] = start_minutes
+        # Keep the highest-priority indicator when a section has
+        # multiple assigned subjects.
+        if priority[status] < priority[existing["status"]]:
+            existing["status"] = status
+            existing["start_minutes"] = start_minutes
 
-            elif (
-                status == existing["status"] == "Upcoming"
-                and start_minutes < existing["start_minutes"]
-            ):
-                existing["start_minutes"] = start_minutes
+        elif status == existing["status"] and start_minutes < existing["start_minutes"]:
+            existing["start_minutes"] = start_minutes
 
     sections = list(section_statuses.values())
-
-    priority = {
-        "Ongoing": 0,
-        "Upcoming": 1,
-        "Completed": 2,
-    }
 
     sections.sort(
         key=lambda section: (
@@ -502,66 +522,24 @@ def get_attendance_subjects():
             return jsonify({"message": "Invalid professor session."}), 401
 
     assignments = list(subject_assignments_collection.find(query))
-
-    now = datetime.now(ZoneInfo("Asia/Manila"))
-    today = now.strftime("%Y-%m-%d")
-    current_day = now.strftime("%A")
+    now = datetime.now(MANILA_TZ)
 
     priority = {
-        "Ongoing": 0,
-        "Upcoming": 1,
-        "Completed": 2,
+        "Started": 0,
+        "Ongoing": 1,
+        "Today": 2,
+        "Tomorrow": 3,
+        "Ended": 4,
+        "": 5,
     }
 
     subjects = []
 
     for assignment in assignments:
-        status = "Upcoming"
-        start_minutes = 24 * 60
-
-        if current_day in assignment.get("days", []):
-            try:
-                start = datetime.strptime(assignment["start_time"], "%H:%M").time()
-
-                end = datetime.strptime(assignment["end_time"], "%H:%M").time()
-
-                start_datetime = now.replace(
-                    hour=start.hour,
-                    minute=start.minute,
-                    second=0,
-                    microsecond=0,
-                )
-
-                end_datetime = now.replace(
-                    hour=end.hour,
-                    minute=end.minute,
-                    second=0,
-                    microsecond=0,
-                )
-
-                start_minutes = start.hour * 60 + start.minute
-
-                class_session = class_sessions_collection.find_one(
-                    {
-                        "assignment_id": assignment["_id"],
-                        "attendance_date": today,
-                    }
-                )
-
-                if now >= end_datetime:
-                    status = "Completed"
-
-                elif class_session and now >= start_datetime:
-                    status = "Ongoing"
-
-                elif now >= start_datetime:
-                    status = "Upcoming"
-
-            except (KeyError, TypeError, ValueError):
-                current_app.logger.exception(
-                    "Invalid schedule for assignment %s",
-                    assignment.get("_id"),
-                )
+        status, start_minutes = get_schedule_indicator(
+            assignment,
+            now,
+        )
 
         subjects.append(
             {
@@ -595,20 +573,17 @@ def get_attendance_subjects():
 def record_attendance():
     data = request.get_json(silent=True) or {}
 
-    section_name = data.get("section_name", "").strip()
-    subject_code = data.get("subject_code", "").strip().upper()
-    student_id = data.get("student_id", "").strip().upper()
-    manual_first_name = data.get("manual_first_name", "").strip().upper()
-    manual_last_name = data.get("manual_last_name", "").strip().upper()
-    not_registered = data.get("not_registered", False)
+    section_name = str(data.get("section_name", "")).strip()
+    subject_code = str(data.get("subject_code", "")).strip().upper()
+    student_id = str(data.get("student_id", "")).strip().upper()
+    manual_first_name = str(data.get("manual_first_name", "")).strip().upper()
+    manual_last_name = str(data.get("manual_last_name", "")).strip().upper()
+    not_registered = data.get("not_registered", False) is True
 
     if not section_name or not subject_code:
         return (
             jsonify(
-                {
-                    "success": False,
-                    "message": "Please select a section and subject.",
-                }
+                {"success": False, "message": "Please select a section and subject."}
             ),
             400,
         )
@@ -625,17 +600,9 @@ def record_attendance():
         )
 
     if not not_registered and not student_id:
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": "Please enter a student ID.",
-                }
-            ),
-            400,
-        )
+        return jsonify({"success": False, "message": "Please enter a student ID."}), 400
 
-    # Verify subject assignment and permissions.
+    # Verify the assignment and the current user's permission first.
     assignment_query = {
         "section_name": section_name,
         "subject_code": subject_code,
@@ -646,12 +613,7 @@ def record_attendance():
             assignment_query["professor_id"] = ObjectId(session["user_id"])
         except (KeyError, TypeError, ValueError):
             return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "Invalid professor session.",
-                    }
-                ),
+                jsonify({"success": False, "message": "Invalid professor session."}),
                 401,
             )
 
@@ -671,54 +633,38 @@ def record_attendance():
             403,
         )
 
-    # Use Philippine local time.
-    now = datetime.now(ZoneInfo("Asia/Manila"))
+    now = datetime.now(MANILA_TZ)
     attendance_date = now.strftime("%Y-%m-%d")
     day_name = now.strftime("%A")
 
-    # Validate the assigned class day.
-    assigned_days = assignment.get("days", [])
-
-    if day_name not in assigned_days:
+    if day_name not in assignment.get("days", []):
         return (
             jsonify(
                 {
                     "success": False,
-                    "message": (f"This class is not scheduled for today ({day_name})."),
+                    "message": f"This class is not scheduled for today ({day_name}).",
                 }
             ),
             400,
         )
 
-    # Parse the scheduled times.
     try:
         start_time = datetime.strptime(assignment["start_time"], "%H:%M").time()
-
         end_time = datetime.strptime(assignment["end_time"], "%H:%M").time()
     except (KeyError, TypeError, ValueError):
         current_app.logger.exception("Invalid subject assignment times.")
         return (
             jsonify(
-                {
-                    "success": False,
-                    "message": "The subject has an invalid schedule.",
-                }
+                {"success": False, "message": "The subject has an invalid schedule."}
             ),
             500,
         )
 
     scheduled_start = now.replace(
-        hour=start_time.hour,
-        minute=start_time.minute,
-        second=0,
-        microsecond=0,
+        hour=start_time.hour, minute=start_time.minute, second=0, microsecond=0
     )
-
     scheduled_end = now.replace(
-        hour=end_time.hour,
-        minute=end_time.minute,
-        second=0,
-        microsecond=0,
+        hour=end_time.hour, minute=end_time.minute, second=0, microsecond=0
     )
 
     if now < scheduled_start:
@@ -735,13 +681,131 @@ def record_attendance():
             400,
         )
 
-    # Create or retrieve today's class session.
+    # Validate the student and duplicates BEFORE creating a class session.
+    # Invalid IDs and duplicate submissions must not leave empty sessions behind.
+    if not not_registered:
+        student = students_collection.find_one({"id_number": student_id})
+
+        if not student:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": (
+                            "Student ID not found. Check the ID or use "
+                            "Not registered? for a student without an account."
+                        ),
+                    }
+                ),
+                404,
+            )
+
+        if student.get("admission_status", "Pending") != "Approved":
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "This student account is not approved for attendance.",
+                    }
+                ),
+                403,
+            )
+
+        if student.get("section") != section_name:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "This student does not belong to the selected section.",
+                    }
+                ),
+                400,
+            )
+
+        student_name = (
+            f"{student.get('first_name', '')} {student.get('last_name', '')}"
+        ).strip()
+
+        if not student_name:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "The student's account has no valid name.",
+                    }
+                ),
+                400,
+            )
+
+        duplicate_query = {
+            "assignment_id": assignment["_id"],
+            "attendance_date": attendance_date,
+            "student_id": student_id,
+        }
+        is_registered = True
+    else:
+        student_name = f"{manual_first_name} {manual_last_name}"
+        student_id = None
+        normalized_name = " ".join(student_name.split()).casefold()
+        duplicate_query = {
+            "assignment_id": assignment["_id"],
+            "attendance_date": attendance_date,
+            "is_registered": False,
+            "manual_name_normalized": normalized_name,
+        }
+        is_registered = False
+
+    if attendance_records_collection.find_one(duplicate_query):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "This student has already been recorded for this subject today.",
+                }
+            ),
+            409,
+        )
+
     session_query = {
         "assignment_id": assignment["_id"],
         "attendance_date": attendance_date,
     }
-
     class_session = class_sessions_collection.find_one(session_query)
+
+    # Do not allow manual attendance after the professor has ended the session.
+    if class_session and class_session.get("status") == "Completed":
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Attendance for this class has already ended.",
+                }
+            ),
+            400,
+        )
+
+    if now >= scheduled_end:
+        if class_session:
+            class_sessions_collection.update_one(
+                {"_id": class_session["_id"]},
+                {
+                    "$set": {
+                        "status": "Completed",
+                        "qr_active": False,
+                        "qr_token": None,
+                        "qr_expires_at": None,
+                    }
+                },
+            )
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "This class has ended. Attendance is now closed.",
+                }
+            ),
+            400,
+        )
 
     if not class_session:
         new_session = {
@@ -762,10 +826,8 @@ def record_attendance():
             new_session["_id"] = result.inserted_id
             class_session = new_session
         except Exception:
-            # Another scan may have created the session simultaneously.
             current_app.logger.exception("Failed to create class session.")
             class_session = class_sessions_collection.find_one(session_query)
-
             if not class_session:
                 return (
                     jsonify(
@@ -777,13 +839,19 @@ def record_attendance():
                     500,
                 )
 
-    # A session's scheduled end time must remain authoritative.
-    scheduled_end = to_manila_time(class_session["scheduled_end"])
-
-    if now >= scheduled_end:
+    # Use the saved session's schedule as the source of truth.
+    saved_scheduled_end = to_manila_time(class_session["scheduled_end"])
+    if now >= saved_scheduled_end:
         class_sessions_collection.update_one(
             {"_id": class_session["_id"]},
-            {"$set": {"status": "Completed"}},
+            {
+                "$set": {
+                    "status": "Completed",
+                    "qr_active": False,
+                    "qr_token": None,
+                    "qr_expires_at": None,
+                }
+            },
         )
         return (
             jsonify(
@@ -795,103 +863,11 @@ def record_attendance():
             400,
         )
 
-    # Determine attendance status using the scheduled start time.
-    scheduled_start = to_manila_time(class_session["scheduled_start"])
-    grace_period_end = scheduled_start + timedelta(minutes=20)
-
-    if now <= grace_period_end:
+    saved_scheduled_start = to_manila_time(class_session["scheduled_start"])
+    if now <= saved_scheduled_start + timedelta(minutes=20):
         attendance_status = "Present"
     else:
         attendance_status = "Late"
-
-    # Registered student.
-    if not not_registered:
-        student = students_collection.find_one(
-            {
-                "id_number": student_id,
-            }
-        )
-
-        if not student:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": (
-                            "Student ID not found. Check the ID or use "
-                            "Not registered? for a student without an account."
-                        ),
-                    }
-                ),
-                404,
-            )
-
-        if student.get("section") != section_name:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": (
-                            "This student does not belong to the selected section."
-                        ),
-                    }
-                ),
-                400,
-            )
-
-        student_name = (
-            f"{student.get('first_name', '')} " f"{student.get('last_name', '')}"
-        ).strip()
-
-        if not student_name:
-            return (
-                jsonify(
-                    {
-                        "success": False,
-                        "message": "The student's account has no valid name.",
-                    }
-                ),
-                400,
-            )
-
-        duplicate_query = {
-            "assignment_id": assignment["_id"],
-            "attendance_date": attendance_date,
-            "student_id": student_id,
-        }
-
-        is_registered = True
-
-    # Manually entered student without an account.
-    else:
-        student_name = f"{manual_first_name} {manual_last_name}"
-        student_id = None
-
-        normalized_name = " ".join(student_name.split()).casefold()
-
-        duplicate_query = {
-            "assignment_id": assignment["_id"],
-            "attendance_date": attendance_date,
-            "is_registered": False,
-            "manual_name_normalized": normalized_name,
-        }
-
-        is_registered = False
-
-    # Prevent duplicate attendance entries.
-    if attendance_records_collection.find_one(duplicate_query):
-        return (
-            jsonify(
-                {
-                    "success": False,
-                    "message": (
-                        "This student has already been recorded "
-                        "for this subject today."
-                    ),
-                }
-            ),
-            409,
-        )
 
     attendance_record = {
         "assignment_id": assignment["_id"],
@@ -906,7 +882,7 @@ def record_attendance():
         "attendance_date": attendance_date,
         "time_in": now.strftime("%I:%M:%S %p"),
         "status": attendance_status,
-        "recorded_by": session["user_id"],
+        "recorded_by": session.get("user_id", ""),
         "created_at": now,
     }
 
@@ -933,9 +909,7 @@ def record_attendance():
         jsonify(
             {
                 "success": True,
-                "message": (
-                    f"Attendance recorded successfully. Status: {attendance_status}."
-                ),
+                "message": f"Attendance recorded successfully. Status: {attendance_status}.",
                 "record": {
                     "student_id": student_id or "Not registered",
                     "student_name": student_name,
@@ -1010,53 +984,39 @@ def get_attendance_records():
     if class_session:
         scheduled_end = to_manila_time(class_session["scheduled_end"])
 
-        if now >= scheduled_end:
+        if class_session.get("status") == "Completed" or now >= scheduled_end:
             session_status = "Completed"
-            class_sessions_collection.update_one(
-                {"_id": class_session["_id"]},
-                {
-                    "$set": {
-                        "status": "Completed",
-                        "qr_active": False,
-                        "qr_token": None,
-                        "qr_expires_at": None,
-                    }
-                },
-            )
+            # Keep the stored state and QR token consistent with the schedule.
+            if class_session.get("status") != "Completed" or class_session.get(
+                "qr_active"
+            ):
+                class_sessions_collection.update_one(
+                    {"_id": class_session["_id"]},
+                    {
+                        "$set": {
+                            "status": "Completed",
+                            "qr_active": False,
+                            "qr_token": None,
+                            "qr_expires_at": None,
+                        }
+                    },
+                )
         else:
             session_status = "Ongoing"
 
-    else:
-        if today and assignment.get("days"):
-            if now.strftime("%A") in assignment["days"]:
-                try:
-                    start_time = datetime.strptime(
-                        assignment["start_time"], "%H:%M"
-                    ).time()
-
-                    end_time = datetime.strptime(assignment["end_time"], "%H:%M").time()
-
-                    scheduled_start = now.replace(
-                        hour=start_time.hour,
-                        minute=start_time.minute,
-                        second=0,
-                        microsecond=0,
-                    )
-
-                    scheduled_end = now.replace(
-                        hour=end_time.hour,
-                        minute=end_time.minute,
-                        second=0,
-                        microsecond=0,
-                    )
-
-                    if now >= scheduled_end:
-                        session_status = "Completed"
-                    elif now >= scheduled_start:
-                        session_status = "Upcoming"
-
-                except (KeyError, TypeError, ValueError):
-                    current_app.logger.exception("Invalid subject schedule.")
+    elif assignment.get("days") and now.strftime("%A") in assignment["days"]:
+        try:
+            end_time = datetime.strptime(assignment["end_time"], "%H:%M").time()
+            scheduled_end = now.replace(
+                hour=end_time.hour,
+                minute=end_time.minute,
+                second=0,
+                microsecond=0,
+            )
+            if now >= scheduled_end:
+                session_status = "Completed"
+        except (KeyError, TypeError, ValueError):
+            current_app.logger.exception("Invalid subject schedule.")
 
     records = attendance_records_collection.find(
         {
@@ -1514,5 +1474,305 @@ def end_attendance_session():
         {
             "success": True,
             "message": "Attendance session ended successfully.",
+        }
+    )
+
+
+#! Attendance History
+@attendance.route("/attendance_history")
+@role_required("professor", "guidance")
+def attendance_history_page():
+    return render_template(
+        "attendance_history_block.html",
+        page_title="Attendance History",
+        first_name=session.get("first_name", ""),
+    )
+
+
+@attendance.route("/get_attendance_history", methods=["GET"])
+@role_required("professor", "guidance")
+def get_attendance_history():
+    assignment_query = {}
+
+    if session.get("role") == "professor":
+        try:
+            assignment_query["professor_id"] = ObjectId(session["user_id"])
+        except (KeyError, TypeError, ValueError):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Invalid professor session.",
+                    }
+                ),
+                401,
+            )
+
+    assignments = list(subject_assignments_collection.find(assignment_query))
+
+    assignment_ids = [assignment["_id"] for assignment in assignments]
+
+    if not assignment_ids:
+        return jsonify(
+            {
+                "success": True,
+                "sessions": [],
+            }
+        )
+
+    sessions = list(
+        class_sessions_collection.find({"assignment_id": {"$in": assignment_ids}}).sort(
+            [
+                ("attendance_date", -1),
+                ("scheduled_start", -1),
+            ]
+        )
+    )
+
+    now = datetime.now(MANILA_TZ)
+    history = []
+
+    for class_session in sessions:
+        section_name = class_session.get("section_name", "")
+        assignment_id = class_session["assignment_id"]
+        attendance_date = class_session["attendance_date"]
+
+        # Only approved students count as registered students.
+        registered_students = list(
+            students_collection.find(
+                {
+                    "section": section_name,
+                    "admission_status": "Approved",
+                },
+                {
+                    "_id": 0,
+                    "id_number": 1,
+                    "first_name": 1,
+                    "last_name": 1,
+                },
+            )
+        )
+
+        registered_ids = {
+            student.get("id_number", "").strip().upper()
+            for student in registered_students
+            if student.get("id_number")
+        }
+
+        # Unregistered visitors must not count toward attendance totals.
+        records = list(
+            attendance_records_collection.find(
+                {
+                    "assignment_id": assignment_id,
+                    "attendance_date": attendance_date,
+                    "is_registered": True,
+                    "student_id": {"$ne": None},
+                }
+            )
+        )
+
+        recorded_ids = {
+            str(record.get("student_id", "")).strip().upper()
+            for record in records
+            if str(record.get("student_id", "")).strip().upper() in registered_ids
+        }
+
+        registered_count = len(registered_ids)
+        present_count = len(recorded_ids)
+
+        scheduled_end = class_session.get("scheduled_end")
+
+        if scheduled_end:
+            scheduled_end = to_manila_time(scheduled_end)
+
+        # Determine the displayed status from the session and records.
+        if (
+            class_session.get("status") == "Ongoing"
+            and scheduled_end
+            and now < scheduled_end
+        ):
+            status = "Ongoing"
+        elif present_count > 0:
+            status = "Completed"
+        else:
+            status = "DNR"
+
+        history.append(
+            {
+                "session_id": str(class_session["_id"]),
+                "section_name": section_name,
+                "subject_code": class_session.get("subject_code", ""),
+                "subject_name": class_session.get("subject_name", ""),
+                "attendance_date": attendance_date,
+                "status": status,
+                "present_count": present_count,
+                "registered_count": registered_count,
+            }
+        )
+
+    return jsonify(
+        {
+            "success": True,
+            "sessions": history,
+        }
+    )
+
+
+@attendance.route(
+    "/get_attendance_history_records",
+    methods=["GET"],
+)
+@role_required("professor", "guidance")
+def get_attendance_history_records():
+    session_id = request.args.get("session_id", "").strip()
+
+    if not ObjectId.is_valid(session_id):
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Invalid class session.",
+                }
+            ),
+            400,
+        )
+
+    class_session = class_sessions_collection.find_one(
+        {
+            "_id": ObjectId(session_id),
+        }
+    )
+
+    if not class_session:
+        return (
+            jsonify(
+                {
+                    "success": False,
+                    "message": "Class session not found.",
+                }
+            ),
+            404,
+        )
+
+    # Professors may only view sessions belonging to their assignments.
+    if session.get("role") == "professor":
+        try:
+            professor_id = ObjectId(session["user_id"])
+        except (KeyError, TypeError, ValueError):
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "Invalid professor session.",
+                    }
+                ),
+                401,
+            )
+
+        assignment = subject_assignments_collection.find_one(
+            {
+                "_id": class_session["assignment_id"],
+                "professor_id": professor_id,
+            }
+        )
+
+        if not assignment:
+            return (
+                jsonify(
+                    {
+                        "success": False,
+                        "message": "You do not have access to this class session.",
+                    }
+                ),
+                403,
+            )
+
+    section_name = class_session.get("section_name", "")
+    assignment_id = class_session["assignment_id"]
+    attendance_date = class_session["attendance_date"]
+
+    registered_students = list(
+        students_collection.find(
+            {
+                "section": section_name,
+                "admission_status": "Approved",
+            },
+            {
+                "_id": 0,
+                "id_number": 1,
+                "first_name": 1,
+                "last_name": 1,
+            },
+        ).sort("last_name", 1)
+    )
+
+    records = list(
+        attendance_records_collection.find(
+            {
+                "assignment_id": assignment_id,
+                "attendance_date": attendance_date,
+                "is_registered": True,
+                "student_id": {"$ne": None},
+            }
+        )
+    )
+
+    registered_ids = {
+        student.get("id_number", "").strip().upper()
+        for student in registered_students
+        if student.get("id_number")
+    }
+
+    records_by_student = {}
+
+    for record in records:
+        student_id = str(record.get("student_id", "")).strip().upper()
+
+        if student_id in registered_ids:
+            # One attendance entry per registered student.
+            records_by_student.setdefault(student_id, record)
+
+    attendance_list = []
+
+    for student in registered_students:
+        student_id = student.get("id_number", "").strip().upper()
+
+        if not student_id:
+            continue
+
+        record = records_by_student.get(student_id)
+
+        student_name = (
+            f"{student.get('first_name', '')} " f"{student.get('last_name', '')}"
+        ).strip()
+
+        attendance_list.append(
+            {
+                "student_name": student_name,
+                "student_id": student_id,
+                "time_in": record.get("time_in", "-") if record else "-",
+                "status": record.get("status", "Absent") if record else "Absent",
+            }
+        )
+
+    present_count = len(records_by_student)
+    registered_count = len(attendance_list)
+
+    return jsonify(
+        {
+            "success": True,
+            "session": {
+                "section_name": section_name,
+                "subject_code": class_session.get("subject_code", ""),
+                "subject_name": class_session.get("subject_name", ""),
+                "attendance_date": attendance_date,
+                "status": class_session.get("status", ""),
+            },
+            "summary": {
+                "present": present_count,
+                "absent": registered_count - present_count,
+                "registered": registered_count,
+            },
+            "records": attendance_list,
         }
     )

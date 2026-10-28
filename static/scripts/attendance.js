@@ -12,6 +12,7 @@ const attendanceRecordsBody = document.getElementById(
 
 let previousAttendanceRecords = null;
 let attendanceCheckInProgress = false;
+let previousSubjectStatus = null;
 
 // Load available sections.
 async function loadSections() {
@@ -30,8 +31,10 @@ async function loadSections() {
 
       option.value = section.section_name;
 
-      const status = section.status || "Upcoming";
-      option.textContent = `${section.section_name} (${status})`;
+      const status = section.status || "";
+      option.textContent = status
+        ? `${section.section_name} (${status})`
+        : section.section_name;
 
       sectionSelect.appendChild(option);
     });
@@ -78,8 +81,12 @@ async function loadSubjects(sectionName) {
 
       option.value = subject.subject_code;
 
-      const status = subject.status || "Upcoming";
-      option.textContent = `${subject.subject_code} - ${subject.subject_name} (${status})`;
+      const status = subject.status || "";
+      const subjectLabel = `${subject.subject_code} - ${subject.subject_name}`;
+
+      option.textContent = status
+        ? `${subjectLabel} (${status})`
+        : subjectLabel;
 
       subjectSelect.appendChild(option);
     });
@@ -341,6 +348,15 @@ async function checkForNewAttendance() {
     }
 
     const data = await response.json();
+
+    const currentStatus = data.status;
+
+    if (previousSubjectStatus === "Ongoing" && currentStatus === "Completed") {
+      window.location.reload();
+      return;
+    }
+
+    previousSubjectStatus = currentStatus;
 
     if (!data.records) {
       return;

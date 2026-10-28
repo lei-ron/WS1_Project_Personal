@@ -59,7 +59,7 @@
             <p>Attendance</p>
           </a>
 
-          <a href="#">
+          <a href="{{ url_for('attendance.attendance_history_page') }}">
             <img
               src="../static/assets/icons/history_icon.svg"
               alt="history_icon"
@@ -68,6 +68,14 @@
           </a>
 
           {% endif %} {% if session.get("role") == "guidance" %}
+
+          <a href="/admissions">
+            <img
+              src="../static/assets/icons/admissions_icon.svg"
+              alt="admissions_icon"
+            />
+            <p>Admissions</p>
+          </a>
 
           <a href="/programs_manager">
             <img
@@ -91,14 +99,6 @@
               alt="subjects_icon"
             />
             <p>Subjects</p>
-          </a>
-
-          <a href="/admissions">
-            <img
-              src="../static/assets/icons/admissions_icon.svg"
-              alt="admissions_icon"
-            />
-            <p>Admissions</p>
           </a>
 
           {% endif %}
@@ -139,5 +139,6 @@
     </div>
 
     <script src="../static/scripts/dashboard_base.js"></script>
+    {% block scripts %}{% endblock %}
   </body>
 </html>

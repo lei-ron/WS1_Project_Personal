@@ -270,29 +270,37 @@
                     method="POST"
                     autocomplete="off"
                   >
-                    <div class="form_single">
-                      <label for="login_id_number">ID no:</label>
-                      <input
-                        type="text"
-                        id="login_id_number"
-                        name="id_number"
-                        required
-                      />
-                    </div>
+                    <div class="login_input_containter">
+                      <div class="form_single">
+                        <label for="login_id_number">ID:</label>
+                        <input
+                          type="text"
+                          id="login_id_number"
+                          name="id_number"
+                          required
+                        />
+                      </div>
 
-                    <div class="form_single">
-                      <label for="login_password">Password:</label>
-                      <input
-                        type="password"
-                        id="login_password"
-                        name="password"
-                        required
-                      />
+                      <div class="form_single">
+                        <label for="login_password">Password:</label>
+                        <input
+                          type="password"
+                          id="login_password"
+                          name="password"
+                          required
+                        />
+                      </div>
                     </div>
                   </form>
 
                   <div class="submit_login_cta">
-                    <button type="submit" form="login_data">Log In</button>
+                    <button
+                      id="submit_login_cta"
+                      type="submit"
+                      form="login_data"
+                    >
+                      Log In
+                    </button>
                   </div>
                 </div>
 

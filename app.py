@@ -8,6 +8,9 @@ from routes.admissions import admissions
 from routes.registration import registration
 from routes.dashboard import dashboard
 from routes.attendance import attendance
+from apscheduler.schedulers.background import BackgroundScheduler
+from services.attendance_service import process_class_sessions
+from zoneinfo import ZoneInfo
 
 load_dotenv()
 
@@ -29,10 +32,25 @@ for rule in app.url_map.iter_rules():
 
 
 if __name__ == "__main__":
-    print("\nQR ATTENDANCE ROUTES:")
+    scheduler = BackgroundScheduler(timezone=ZoneInfo("Asia/Manila"))
 
+    scheduler.add_job(
+        func=process_class_sessions,
+        trigger="interval",
+        seconds=30,
+        id="class_session_scheduler",
+        replace_existing=True,
+        max_instances=1,
+    )
+
+    scheduler.start()
+
+    print("\nQR ATTENDANCE ROUTES:")
     for rule in app.url_map.iter_rules():
         if "attendance" in rule.rule:
             print(rule.rule, "->", rule.endpoint)
 
-    app.run(debug=True)
+    try:
+        app.run(debug=True, use_reloader=False)
+    finally:
+        scheduler.shutdown()
