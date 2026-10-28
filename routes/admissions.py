@@ -1,7 +1,5 @@
 import os
 
-from flask import request
-
 from bson import ObjectId
 from flask import (
     Blueprint,
@@ -9,6 +7,7 @@ from flask import (
     current_app,
     redirect,
     render_template,
+    request,
     send_from_directory,
     session,
     url_for,

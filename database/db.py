@@ -1,10 +1,9 @@
 import os
+
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
 load_dotenv()
-
-print("Loaded MongoDB host:", os.getenv("MONGO_URI", "").split("@")[-1].split("/")[0])
 
 MONGO_URI = os.getenv("MONGO_URI")
 
@@ -24,5 +23,6 @@ sections_collection = db["sections"]
 subjects_collection = db["subjects"]
 
 subject_assignments_collection = db["subject_assignments"]
+
 attendance_records_collection = db["attendance_records"]
 class_sessions_collection = db["class_sessions"]

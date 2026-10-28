@@ -287,6 +287,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 //! Login form response
+
 const form2 = document.getElementById("login_data");
 const login_message = document.getElementById("login_message");
 
@@ -307,7 +308,7 @@ form2.addEventListener("submit", async (event) => {
 
   if (result.success) {
     setTimeout(() => {
-      window.location.href = "/dashboard";
+      window.location.href = result.redirect_url;
     }, 3000);
   } else {
     setTimeout(() => {

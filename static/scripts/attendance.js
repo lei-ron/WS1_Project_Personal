@@ -6,10 +6,12 @@ const notRegisteredCheckbox = document.getElementById("not_registered");
 const manualNameContainer = document.getElementById("manual_name_container");
 const manualFirstNameInput = document.getElementById("manual_first_name");
 const manualLastNameInput = document.getElementById("manual_last_name");
-const attendanceMessage = document.getElementById("attendance_message");
 const attendanceRecordsBody = document.getElementById(
   "attendance_records_body",
 );
+
+let previousAttendanceRecords = null;
+let attendanceCheckInProgress = false;
 
 // Load available sections.
 async function loadSections() {
@@ -29,14 +31,13 @@ async function loadSections() {
       option.value = section.section_name;
 
       const status = section.status || "Upcoming";
-
       option.textContent = `${section.section_name} (${status})`;
 
       sectionSelect.appendChild(option);
     });
   } catch (error) {
     console.error("Error loading sections:", error);
-    attendanceMessage.textContent = error.message;
+    alert(error.message);
   }
 }
 
@@ -50,8 +51,6 @@ async function loadSubjects(sectionName) {
       <td colspan="4">No attendance records.</td>
     </tr>
   `;
-
-  attendanceMessage.textContent = "";
 
   if (!sectionName) {
     return;
@@ -71,7 +70,6 @@ async function loadSubjects(sectionName) {
     if (data.subjects.length === 0) {
       subjectSelect.innerHTML =
         '<option value="">No assigned subjects</option>';
-
       return;
     }
 
@@ -81,7 +79,6 @@ async function loadSubjects(sectionName) {
       option.value = subject.subject_code;
 
       const status = subject.status || "Upcoming";
-
       option.textContent = `${subject.subject_code} - ${subject.subject_name} (${status})`;
 
       subjectSelect.appendChild(option);
@@ -90,7 +87,7 @@ async function loadSubjects(sectionName) {
     subjectSelect.disabled = false;
   } catch (error) {
     console.error("Error loading subjects:", error);
-    attendanceMessage.textContent = error.message;
+    alert(error.message);
   }
 }
 
@@ -105,7 +102,6 @@ async function loadAttendanceRecords() {
         <td colspan="4">No attendance records.</td>
       </tr>
     `;
-
     return;
   }
 
@@ -141,7 +137,6 @@ async function loadAttendanceRecords() {
           <td colspan="4">No attendance records.</td>
         </tr>
       `;
-
       return;
     }
 
@@ -166,27 +161,39 @@ async function loadAttendanceRecords() {
     });
   } catch (error) {
     console.error("Error loading attendance records:", error);
-    attendanceMessage.textContent = error.message;
+    alert(error.message);
   }
 }
 
-// Switch between registered and manually entered students.
-notRegisteredCheckbox.addEventListener("change", () => {
+// Toggle manual input availability without hiding the fields.
+function toggleManualInput() {
   const manualEntry = notRegisteredCheckbox.checked;
 
-  manualNameContainer.hidden = !manualEntry;
+  // Keep the name inputs visible at all times.
+  manualNameContainer.hidden = false;
 
+  // Enable name inputs only when "Not registered?" is checked.
   manualFirstNameInput.disabled = !manualEntry;
   manualLastNameInput.disabled = !manualEntry;
 
   manualFirstNameInput.required = manualEntry;
   manualLastNameInput.required = manualEntry;
 
+  // Enable Student ID only for registered students.
   studentIdInput.disabled = manualEntry;
   studentIdInput.required = !manualEntry;
 
-  attendanceMessage.textContent = "";
-});
+  // Clear fields when switching input modes.
+  if (manualEntry) {
+    studentIdInput.value = "";
+  } else {
+    manualFirstNameInput.value = "";
+    manualLastNameInput.value = "";
+  }
+}
+
+// Handle checkbox changes.
+notRegisteredCheckbox.addEventListener("change", toggleManualInput);
 
 // Load subjects and records when the selected section changes.
 sectionSelect.addEventListener("change", async () => {
@@ -210,14 +217,11 @@ subjectSelect.addEventListener("change", async () => {
 attendanceForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  attendanceMessage.textContent = "";
-
   const sectionName = sectionSelect.value;
   const subjectCode = subjectSelect.value;
 
   if (!sectionName || !subjectCode) {
-    attendanceMessage.textContent = "Please select a section and subject.";
-
+    alert("Please select a section and subject.");
     return;
   }
 
@@ -233,11 +237,9 @@ attendanceForm.addEventListener("submit", async (event) => {
   try {
     const response = await fetch("/record_attendance", {
       method: "POST",
-
       headers: {
         "Content-Type": "application/json",
       },
-
       body: JSON.stringify(payload),
     });
 
@@ -260,44 +262,38 @@ attendanceForm.addEventListener("submit", async (event) => {
       throw new Error(data.message || "Failed to record attendance.");
     }
 
-    // Preserve the current section and subject before reloading.
-    sessionStorage.setItem("attendance_section", sectionName);
-    sessionStorage.setItem("attendance_subject", subjectCode);
-
-    // Reload after successfully recording attendance.
     if (data.success) {
+      alert(data.message || "Attendance recorded successfully!");
+
+      // Preserve the current section and subject before reloading.
+      sessionStorage.setItem("attendance_section", sectionName);
+      sessionStorage.setItem("attendance_subject", subjectCode);
+
+      // Reload after successfully recording attendance.
       window.location.reload();
     } else {
-      attendanceMessage.textContent =
-        data.message || "Attendance could not be recorded.";
+      alert(data.message || "Attendance could not be recorded.");
     }
   } catch (error) {
     console.error("Error recording attendance:", error);
-    attendanceMessage.textContent = error.message;
+    alert(error.message);
   }
 });
 
 // Initialize the attendance page.
 async function initializeAttendancePage() {
-  // Always reset the "Not registered?" checkbox on page load.
+  // Reset the checkbox.
   notRegisteredCheckbox.checked = false;
 
   // Reset manual student fields.
-  manualNameContainer.hidden = true;
-
   manualFirstNameInput.value = "";
   manualLastNameInput.value = "";
 
-  manualFirstNameInput.disabled = true;
-  manualLastNameInput.disabled = true;
-
-  manualFirstNameInput.required = false;
-  manualLastNameInput.required = false;
-
-  // Reset student ID input.
+  // Reset Student ID.
   studentIdInput.value = "";
-  studentIdInput.disabled = false;
-  studentIdInput.required = true;
+
+  // Apply the default input state.
+  toggleManualInput();
 
   // Retrieve previously selected options.
   const savedSection = sessionStorage.getItem("attendance_section");
@@ -323,5 +319,74 @@ async function initializeAttendancePage() {
   }
 }
 
+// Check whether a new attendance record has been added.
+async function checkForNewAttendance() {
+  const sectionName = sectionSelect.value;
+  const subjectCode = subjectSelect.value;
+
+  if (!sectionName || !subjectCode || attendanceCheckInProgress) {
+    return;
+  }
+
+  attendanceCheckInProgress = true;
+
+  try {
+    const response = await fetch(
+      `/get_attendance_records?section_name=${encodeURIComponent(sectionName)}&subject_code=${encodeURIComponent(subjectCode)}`,
+      { cache: "no-store" },
+    );
+
+    if (!response.ok) {
+      return;
+    }
+
+    const data = await response.json();
+
+    if (!data.records) {
+      return;
+    }
+
+    // Identify records using their student ID and check-in time.
+    const currentRecords = data.records.map((record) =>
+      JSON.stringify([
+        record.student_id,
+        record.student_name,
+        record.time_in,
+        record.status,
+      ]),
+    );
+
+    if (previousAttendanceRecords === null) {
+      previousAttendanceRecords = currentRecords;
+      return;
+    }
+
+    const hasNewRecord = currentRecords.some(
+      (record) => !previousAttendanceRecords.includes(record),
+    );
+
+    if (hasNewRecord) {
+      // Preserve the selected section and subject.
+      sessionStorage.setItem("attendance_section", sectionName);
+      sessionStorage.setItem("attendance_subject", subjectCode);
+
+      window.location.reload();
+      return;
+    }
+
+    previousAttendanceRecords = currentRecords;
+  } catch (error) {
+    console.error("Error checking for new attendance:", error);
+  } finally {
+    attendanceCheckInProgress = false;
+  }
+}
+
 // Start initialization after the script runs.
-initializeAttendancePage();
+initializeAttendancePage().then(() => {
+  if (sectionSelect.value && subjectSelect.value) {
+    checkForNewAttendance();
+
+    setInterval(checkForNewAttendance, 2000);
+  }
+});

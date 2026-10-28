@@ -15,12 +15,12 @@
     <table>
       <thead>
         <tr>
-          <th>Student Name</th>
-          <th>Student ID</th>
+          <th>Name</th>
+          <th>ID</th>
           <th>Program</th>
           <th>Year Level</th>
-          <th>Admission Status</th>
-          <th>Documents</th>
+          <th>Status</th>
+          <th>Document</th>
           <th>Actions</th>
         </tr>
       </thead>
@@ -52,31 +52,31 @@
               method="POST"
               action="{{ url_for('admissions.review_admission', student_id=student._id) }}"
             >
-              <button type="submit" name="status" value="Approved">
-                Approve
-              </button>
+              <div class="action_container">
+                <div class="buttons_container">
+                  <button type="submit" name="status" value="Approved">
+                    Approve
+                  </button>
 
-              <br />
+                  <button
+                    type="submit"
+                    name="status"
+                    value="Rejected"
+                    onclick="
+                      return confirm(
+                        'Are you sure you want to reject this application?',
+                      );
+                    "
+                  >
+                    Reject
+                  </button>
+                </div>
 
-              <textarea
-                name="remarks"
-                placeholder="Reason for rejection"
-              ></textarea>
-
-              <br />
-
-              <button
-                type="submit"
-                name="status"
-                value="Rejected"
-                onclick="
-                  return confirm(
-                    'Are you sure you want to reject this application?',
-                  );
-                "
-              >
-                Reject
-              </button>
+                <textarea
+                  name="remarks"
+                  placeholder="Reason for rejection:"
+                ></textarea>
+              </div>
             </form>
             {% else %} Reviewed {% endif %}
           </td>

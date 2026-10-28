@@ -1,5 +1,4 @@
 from functools import wraps
-
 from flask import abort, redirect, url_for, session
 
 

@@ -1,0 +1,28 @@
+{% extends "dashboard_base.html" %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='styles/student_attendance.css') }}"
+/>
+{% endblock %} {% block title %}Student Attendance{% endblock %} {% block
+content %}
+<div class="container_background">
+  <div class="title_topbar">
+    <h2>Scan Attendance QR Code</h2>
+  </div>
+
+  <div class="student_attendance_container">
+    <p>
+      Scan the QR code displayed by your professor to record your attendance.
+    </p>
+
+    <div id="qr_reader"></div>
+
+    <p id="scan_message" role="status" aria-live="polite">
+      Camera access is required to scan the QR code.
+    </p>
+  </div>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+<script src="{{ url_for('static', filename='scripts/student_attendance.js') }}"></script>
+{% endblock %}

@@ -1,89 +1,161 @@
-{% extends "dashboard_base.html" %} {% block title %}Attendance Manager{%
-endblock %} {% block content %}
+{% extends "dashboard_base.html" %} {% block styles %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='styles/attendance.css') }}"
+/>
+{% endblock %} {% block title %}Attendance Manager{% endblock %} {% block
+content %}
 
-<h2>Attendance Manager</h2>
+<div class="main_container">
+  <div class="left_column_container">
+    <div class="container_background">
+      <div class="title_topbar">
+        <h2>Select Session</h2>
+      </div>
 
-<label for="attendance_section">Section:</label>
-<select id="attendance_section" required>
-  <option value="">Select a section</option>
-</select>
+      <div class="form_container">
+        <div class="form_group">
+          <div class="form_single">
+            <label for="attendance_section">Section:</label>
+            <select id="attendance_section" required>
+              <option value="">Select a section</option>
+            </select>
+          </div>
 
-<br /><br />
+          <div class="form_single">
+            <label for="attendance_subject">Subject:</label>
+            <select id="attendance_subject" required disabled>
+              <option value="">Select a subject</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<label for="attendance_subject">Subject:</label>
-<select id="attendance_subject" required disabled>
-  <option value="">Select a subject</option>
-</select>
+    <div class="container_background">
+      <div class="title_topbar">
+        <h2>Scan QR Code</h2>
 
-<br /><br />
+        <div class="qr_attendance_buttons">
+          <button type="button" id="start_attendance_button">Start</button>
 
-<form id="attendance_form">
-  <label for="student_id">Student ID:</label>
-  <input
-    type="text"
-    id="student_id"
-    name="student_id"
-    placeholder="Enter student ID"
-    autocomplete="off"
-  />
+          <button type="button" id="end_attendance_button" disabled>End</button>
+        </div>
+      </div>
 
-  <br /><br />
+      <div class="qr_generator_container">
+        <div class="left_side">
+          <p id="qr_session_status" role="status">
+            Select a section and subject to begin.
+          </p>
 
-  <label>
-    <input type="checkbox" id="not_registered" />
-    Not registered?
-  </label>
+          <p>
+            QR refreshes in
+            <strong id="qr_countdown">30</strong>
+            seconds.
+          </p>
+        </div>
 
-  <br /><br />
+        <div class="right_side">
+          <div class="qr_attendance_container">
+            <div id="qr_code_container" hidden>
+              <img id="attendance_qr_image" src="" alt="Attendance QR Code" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-  <div id="manual_name_container" hidden>
-    <label for="manual_first_name">First Name:</label>
-    <input
-      type="text"
-      id="manual_first_name"
-      name="manual_first_name"
-      placeholder="Enter first name"
-      autocomplete="off"
-      disabled
-    />
+    <div class="container_background">
+      <div class="title_topbar">
+        <h2>Manual Input</h2>
 
-    <br /><br />
+        <button type="submit" id="add_student_button" form="attendance_form">
+          Check-in
+        </button>
+      </div>
 
-    <label for="manual_last_name">Last Name:</label>
-    <input
-      type="text"
-      id="manual_last_name"
-      name="manual_last_name"
-      placeholder="Enter last name"
-      autocomplete="off"
-      disabled
-    />
+      <span id="attendance_message" role="status" aria-live="polite"></span>
 
-    <br /><br />
+      <div class="form_container">
+        <form id="attendance_form">
+          <div class="form_group">
+            <div class="form_single">
+              <label for="student_id">Student ID:</label>
+              <input
+                type="text"
+                id="student_id"
+                name="student_id"
+                placeholder="Enter student ID"
+                autocomplete="off"
+              />
+            </div>
+          </div>
+        </form>
+
+        <div class="form_group">
+          <div class="form_single">
+            <label>
+              <input type="checkbox" id="not_registered" />
+              Not registered yet?
+            </label>
+          </div>
+        </div>
+
+        <div id="manual_name_container" hidden>
+          <div class="form_group">
+            <div class="form_single">
+              <label for="manual_first_name">First name:</label>
+              <input
+                type="text"
+                id="manual_first_name"
+                name="manual_first_name"
+                placeholder="Enter first name"
+                autocomplete="off"
+                disabled
+              />
+            </div>
+
+            <div class="form_single">
+              <label for="manual_last_name">Last name:</label>
+              <input
+                type="text"
+                id="manual_last_name"
+                name="manual_last_name"
+                placeholder="Enter last name"
+                autocomplete="off"
+                disabled
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <button type="submit" id="add_student_button">Add Student</button>
-</form>
+  <div class="right_column_container">
+    <div class="container_background">
+      <table>
+        <thead>
+          <tr>
+            <th>Student ID</th>
+            <th>Name</th>
+            <th>Time In</th>
+            <th>Status</th>
+          </tr>
+        </thead>
 
-<p id="attendance_message"></p>
-
-<table>
-  <thead>
-    <tr>
-      <th>Student ID</th>
-      <th>Student Name</th>
-      <th>Time In</th>
-      <th>Status</th>
-    </tr>
-  </thead>
-
-  <tbody id="attendance_records_body">
-    <tr>
-      <td colspan="4">No attendance records.</td>
-    </tr>
-  </tbody>
-</table>
+        <tbody id="attendance_records_body">
+          <tr>
+            <td colspan="4">No attendance records.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
 
 <script src="{{ url_for('static', filename='scripts/attendance.js') }}"></script>
+<script src="{{ url_for('static', filename='scripts/attendance_qr.js') }}"></script>
 
 {% endblock %}

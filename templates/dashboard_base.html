@@ -33,7 +33,15 @@
         </div>
 
         <div class="middle_ctas">
-          {% if session.get("role") == "professor" %}
+          {% if session.get("role") == "student" %}
+          <a href="/student/attendance">
+            <img
+              src="../static/assets/icons/attendance_icon.svg"
+              alt="attendance_icon"
+            />
+            <p>Attendance</p>
+          </a>
+          {% endif %} {% if session.get("role") == "professor" %}
 
           <a href="/dashboard">
             <img

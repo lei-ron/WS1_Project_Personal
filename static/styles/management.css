@@ -199,6 +199,20 @@
   }
 }
 
+.action_container {
+  display: grid;
+  gap: 4px;
+  .buttons_container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+
+    button {
+      display: block;
+    }
+  }
+}
+
 /* #subject_programs_container {
   position: relative;
 }
