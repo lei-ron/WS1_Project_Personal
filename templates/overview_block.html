@@ -7,38 +7,6 @@ block styles %}
 {% endblock %} {% block content %}
 <div class="cards_container">
   <div class="left_column_group">
-    <div class="subjects_list">
-      <div class="card_title">
-        <h3>Subjects List</h3>
-      </div>
-
-      <div class="subjects_content">
-        {% for subject in subjects %}
-        <div class="card">
-          <h4>{{ subject.subject_code }}: {{ subject.subject_name }}</h4>
-
-          <div class="subject_details">
-            <div class="info">
-              <p>Schedule:</p>
-              <p>Time:</p>
-              <p>Room:</p>
-              <p>Section:</p>
-            </div>
-
-            <div class="info_data">
-              <p>{{ subject.schedule }}</p>
-              <p>{{ subject.start_time }} - {{ subject.end_time }}</p>
-              <p>{{ subject.building }}-{{ subject.room_number }}</p>
-              <p>{{ subject.section }}</p>
-            </div>
-          </div>
-        </div>
-        {% else %}
-        <p>No subjects added yet.</p>
-        {% endfor %}
-      </div>
-    </div>
-
     <div class="upcoming_schedule">
       <div class="card_title">
         <h3>Upcoming Schedule</h3>
@@ -71,137 +39,44 @@ block styles %}
         {% endfor %}
       </div>
     </div>
+
+    <div class="recent_class_history">
+      <div class="card_title"><h3>Recent Class History</h3></div>
+    </div>
   </div>
 
   <div class="right_column_group">
-    <div class="recent_scan_history">
-      <div class="card_title"><h3>Recent Class History</h3></div>
-
-      <!-- <div class="card">
-        <ul class="history-list">
-          {% if scan_history %} {% for scan in scan_history %}
-          <li>
-            <span class="badge-check">✓</span>
-            {{ scan.subject }} |
-            <span class="status-present">{{ scan.status }}</span> | {{ scan.time
-            }}
-          </li>
-          {% endfor %} {% else %}
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          {% endif %}
-        </ul>
-      </div> -->
-    </div>
-
-    <div class="recent_scan_history">
-      <div class="card_title"><h3>Recent Scan History</h3></div>
-
-      <!-- <div class="card">
-        <ul class="history-list">
-          {% if scan_history %} {% for scan in scan_history %}
-          <li>
-            <span class="badge-check">✓</span>
-            {{ scan.subject }} |
-            <span class="status-present">{{ scan.status }}</span> | {{ scan.time
-            }}
-          </li>
-          {% endfor %} {% else %}
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          <li>
-            <span class="badge-check">✓</span> WS1 - Web Systems |
-            <span class="status-present">Present</span> | Oct. 05, 2026 12:00 PM
-          </li>
-          {% endif %}
-        </ul>
-      </div> -->
-    </div>
-
-    <!-- <div class="upcoming_schedule">
-      <h3>Daily Schedule & Live Status</h3>
-      <div
-        class="card"
-        style="padding: 16px; display: flex; flex-direction: column; gap: 12px"
-      >
-        <div class="date-navigator">
-          <button>&lt;</button>
-          <span>Today (Mon, Oct 25)</span>
-          <button>&gt;</button>
-        </div>
-
-        <div class="live-session-card">
-          <div class="session-header">
-            <strong>WEB SYSTEMS TECHNOLOGY</strong>
-            <span class="badge-live">LIVE SESSION</span>
-          </div>
-          <p
-            class="session-time"
-            style="font-size: 0.95rem; color: #4a5568; margin-bottom: 8px"
-          >
-            (12:00 NN - 01:30 PM)
-          </p>
-          <button class="btn-qr">VIEW MY QR CODE</button>
-        </div>
+    <div class="subjects_list">
+      <div class="card_title">
+        <h3>Subjects List</h3>
       </div>
-    </div>
 
-    <div id="qrModal" class="modal-overlay">
-      <div class="modal-content">
-        <button class="modal-close" id="closeQrModal">&times;</button>
-        <div class="qr-modal-header">
-          <h3>My Attendance QR Code</h3>
-          <p>Scan this code at the classroom terminal for instant check-in.</p>
-        </div>
+      <div class="subjects_content">
+        {% for subject in subjects %}
+        <div class="card">
+          <h4>{{ subject.subject_code }}: {{ subject.subject_name }}</h4>
 
-        <div class="qr-code-container">
-          <div class="qr-placeholder-box">
-            <i class="fas fa-qrcode"></i>
-            <img
-              src="{{ url_for('static', filename='images/sample_qr.png') }}"
-              alt="Student QR Code"
-              id="studentQRImg"
-              onerror="
-                this.style.display = 'none';
-                this.nextElementSibling.style.display = 'flex';
-              "
-            />
-            <div class="fallback-qr-text" style="display: none">
-              <span>[QR Code Loading...]</span>
+          <div class="subject_details">
+            <div class="info">
+              <p>Schedule:</p>
+              <p>Time:</p>
+              <p>Room:</p>
+              <p>Section:</p>
+            </div>
+
+            <div class="info_data">
+              <p>{{ subject.schedule }}</p>
+              <p>{{ subject.start_time }} - {{ subject.end_time }}</p>
+              <p>{{ subject.building }}-{{ subject.room_number }}</p>
+              <p>{{ subject.section }}</p>
             </div>
           </div>
         </div>
-
-        <div class="qr-student-info">
-          <span class="student-name">Jessie Aldana</span>
-          <span class="student-id">ID: CA123456789</span>
-        </div>
+        {% else %}
+        <p>No subjects added yet.</p>
+        {% endfor %}
       </div>
-    </div> -->
+    </div>
   </div>
 </div>
 

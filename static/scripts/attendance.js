@@ -82,7 +82,7 @@ async function loadSubjects(sectionName) {
       option.value = subject.subject_code;
 
       const status = subject.status || "";
-      const subjectLabel = `${subject.subject_code} - ${subject.subject_name}`;
+      const subjectLabel = `${subject.subject_code}: ${subject.subject_name}`;
 
       option.textContent = status
         ? `${subjectLabel} (${status})`

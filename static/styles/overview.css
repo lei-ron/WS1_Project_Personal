@@ -11,7 +11,7 @@
   }
 
   .right_column_group {
-    grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .left_column_group,
@@ -22,7 +22,7 @@
 
     .subjects_list,
     .upcoming_schedule,
-    .recent_scan_history {
+    .recent_class_history {
       display: grid;
       grid-template-rows: auto minmax(0, 1fr);
       background-color: var(--surface-color);
@@ -65,7 +65,7 @@
 
           h4 {
             font-family: var(--alt-font);
-            font-size: 1.5rem;
+            font-size: 1.25rem;
             font-weight: 500;
             color: var(--muted-text-color);
           }
@@ -84,12 +84,12 @@
 
           .subject_details,
           .subject_schedule {
-            padding: 8px 0 0 0;
+            padding-top: 8px;
             border-top: 1px solid #6b7c8f44;
 
             p {
               font-family: var(--main-font);
-              font-size: 1.25rem;
+              font-size: 1rem;
               color: var(--primary-text-color);
             }
           }

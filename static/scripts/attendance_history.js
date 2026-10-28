@@ -1,7 +1,9 @@
 const classList = document.getElementById("class_list");
 const classSessionCount = document.getElementById("class_session_count");
 
-const selectedClassLabel = document.getElementById("selected_class_label");
+const selectedClassSubject = document.getElementById("selected_class_subject");
+const selectedClassSection = document.getElementById("selected_class_section");
+const selectedClassDate = document.getElementById("selected_class_date");
 
 const presentCount = document.getElementById("present_count");
 const absentCount = document.getElementById("absent_count");
@@ -39,26 +41,34 @@ async function loadAttendanceHistory() {
 
       item.type = "button";
       item.className = "class_session_item";
-
       item.dataset.sessionId = classSession.session_id;
 
       const attendanceTotal = `${classSession.present_count}/${classSession.registered_count}`;
 
       item.innerHTML = `
-        <div class="class_session_info">
-          <strong class="class_session_subject"></strong>
-          <span class="class_session_section"></span>
-          <span class="class_session_date"></span>
+        <div class="class_session_subject_container">
+          <h4 class="class_session_subject"></h4>
         </div>
 
-        <div class="class_session_meta">
-          <span class="class_session_status"></span>
-          <span class="class_session_total"></span>
+        <div class="info_container">
+          <div class="info_details">
+            <p>Section:</p>
+            <p>Date:</p>
+            <p>Status:</p>
+            <p>Students:</p>
+          </div>
+
+          <div class="class_session_info_container">
+            <span class="class_session_section"></span>
+            <span class="class_session_date"></span>
+            <span class="class_session_status"></span>
+            <span class="class_session_total"></span>
+          </div>
         </div>
       `;
 
       item.querySelector(".class_session_subject").textContent =
-        `${classSession.subject_code} - ${classSession.subject_name}`;
+        `${classSession.subject_code}: ${classSession.subject_name}`;
 
       item.querySelector(".class_session_section").textContent =
         classSession.section_name;
@@ -106,7 +116,9 @@ async function selectClassSession(sessionId, selectedItem) {
 
   selectedItem.classList.add("selected");
 
-  selectedClassLabel.textContent = "Loading attendance details...";
+  selectedClassSubject.textContent = "Loading attendance...";
+  selectedClassSection.textContent = "";
+  selectedClassDate.textContent = "";
 
   attendanceTableBody.innerHTML = `
     <tr>
@@ -129,9 +141,10 @@ async function selectClassSession(sessionId, selectedItem) {
 
     const classSession = data.session;
 
-    selectedClassLabel.textContent =
-      `${classSession.subject_code} - ${classSession.subject_name} | ` +
-      `${classSession.section_name} | ${classSession.attendance_date}`;
+    selectedClassSubject.textContent = `${classSession.subject_code}: ${classSession.subject_name}`;
+
+    selectedClassSection.textContent = classSession.section_name;
+    selectedClassDate.textContent = classSession.attendance_date;
 
     presentCount.textContent = data.summary.present;
     absentCount.textContent = data.summary.absent;
@@ -161,9 +174,7 @@ async function selectClassSession(sessionId, selectedItem) {
       `;
 
       row.querySelector(".student_name").textContent = record.student_name;
-
       row.querySelector(".student_id").textContent = record.student_id;
-
       row.querySelector(".time_recorded").textContent = record.time_in;
 
       const statusCell = row.querySelector(".attendance_status");
@@ -176,7 +187,9 @@ async function selectClassSession(sessionId, selectedItem) {
   } catch (error) {
     console.error("Attendance details error:", error);
 
-    selectedClassLabel.textContent = "Failed to load attendance details.";
+    selectedClassSubject.textContent = "Failed to load attendance details.";
+    selectedClassSection.textContent = "";
+    selectedClassDate.textContent = "";
 
     attendanceTableBody.innerHTML = `
       <tr>

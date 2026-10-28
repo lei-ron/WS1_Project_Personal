@@ -5,15 +5,10 @@
 />
 {% endblock %} {% block title %}Attendance History{% endblock %} {% block
 content %}
-<section class="attendance_history">
-  <div class="history_header">
-    <h2>Attendance History</h2>
-    <p>View ongoing and previously recorded class attendance.</p>
-  </div>
-
-  <div class="history_content">
-    <div class="class_list_container">
-      <div class="class_list_header">
+<div class="main_container">
+  <div class="left_column_container">
+    <div class="container_background">
+      <div class="title_topbar">
         <h3>Class Sessions</h3>
         <span id="class_session_count">0 classes</span>
       </div>
@@ -22,53 +17,72 @@ content %}
         <p class="empty_state">No class sessions available.</p>
       </div>
     </div>
+  </div>
 
-    <div class="attendance_details_container">
-      <div class="attendance_details_header">
-        <h3>Attendance Details</h3>
-        <p id="selected_class_label">Select a class to view its attendance.</p>
-      </div>
+  <div class="right_column_container">
+    <div class="container_background">
+      <div class="attendance_details_container">
+        <div class="top">
+          <div class="title_topbar">
+            <h3>Attendance Details</h3>
+          </div>
 
-      <div class="attendance_summary" id="attendance_summary">
-        <div class="summary_item">
-          <span>Present</span>
-          <strong id="present_count">0</strong>
+          <div class="class_record_details_container">
+            <div class="selected_class_header">
+              <h3 id="selected_class_subject">Select a class</h3>
+
+              <div class="selected_class_details">
+                <span id="selected_class_section"></span>
+                <span>/</span>
+                <span id="selected_class_date"></span>
+              </div>
+            </div>
+
+            <div class="attendance_summary" id="attendance_summary">
+              <div class="summary_item">
+                <span>Present</span>
+                <strong id="present_count">0</strong>
+              </div>
+
+              <div class="summary_item">
+                <span>Absent</span>
+                <strong id="absent_count">0</strong>
+              </div>
+
+              <div class="summary_item">
+                <span>Registered Students</span>
+                <strong id="registered_count">0</strong>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div class="summary_item">
-          <span>Absent</span>
-          <strong id="absent_count">0</strong>
+        <div class="bot">
+          <div class="attendance_table_container">
+            <table class="attendance_table">
+              <thead>
+                <tr>
+                  <th>Student</th>
+                  <th>Student ID</th>
+                  <th>Time Recorded</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+
+              <tbody id="attendance_table_body">
+                <tr>
+                  <td colspan="4" class="empty_state">
+                    Select a class to view attendance records.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-
-        <div class="summary_item">
-          <span>Registered Students</span>
-          <strong id="registered_count">0</strong>
-        </div>
-      </div>
-
-      <div class="attendance_table_container">
-        <table class="attendance_table">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Student ID</th>
-              <th>Time Recorded</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-
-          <tbody id="attendance_table_body">
-            <tr>
-              <td colspan="4" class="empty_state">
-                Select a class to view attendance records.
-              </td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </div>
   </div>
-</section>
+</div>
 {% endblock %} {% block scripts %}
 <script src="{{ url_for('static', filename='scripts/attendance_history.js') }}"></script>
 {% endblock %}
