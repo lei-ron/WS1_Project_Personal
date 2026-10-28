@@ -178,7 +178,7 @@ function stopQrRefresh() {
 
   qrCodeContainer.hidden = true;
   attendanceQrImage.src = "";
-  qrCountdown.textContent = "30";
+  qrCountdown.textContent = "3";
 
   startAttendanceButton.disabled = false;
   endAttendanceButton.disabled = true;

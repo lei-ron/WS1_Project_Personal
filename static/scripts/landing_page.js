@@ -291,29 +291,65 @@ form.addEventListener("submit", async (event) => {
 const form2 = document.getElementById("login_data");
 const login_message = document.getElementById("login_message");
 
+// Get or create the browser's persistent device identifier.
+function getDeviceId() {
+  let device_id = localStorage.getItem("attendance_device_id");
+
+  if (!device_id) {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+      device_id = window.crypto.randomUUID();
+    } else {
+      device_id =
+        Date.now().toString(36) +
+        "-" +
+        Math.random().toString(36).substring(2) +
+        "-" +
+        Math.random().toString(36).substring(2);
+    }
+
+    localStorage.setItem("attendance_device_id", device_id);
+  }
+
+  return device_id;
+}
+
 form2.addEventListener("submit", async (event) => {
   event.preventDefault();
 
-  const response = await fetch(form2.action, {
-    method: "POST",
-    body: new FormData(form2),
-  });
+  try {
+    const form_data = new FormData(form2);
 
-  const result = await response.json();
+    form_data.set("device_id", getDeviceId());
 
-  login_message.textContent = result.message;
-  login_message.className = result.success
-    ? "form_message success show"
-    : "form_message error show";
+    const response = await fetch(form2.action, {
+      method: "POST",
+      body: form_data,
+    });
 
-  if (result.success) {
-    setTimeout(() => {
-      window.location.href = result.redirect_url;
-    }, 3000);
-  } else {
-    setTimeout(() => {
-      login_message.classList.remove("show");
-    }, 3000);
+    const result = await response.json();
+
+    login_message.textContent = result.message;
+
+    login_message.className = result.success
+      ? "form_message success show"
+      : "form_message error show";
+
+    if (result.success) {
+      setTimeout(() => {
+        window.location.href = result.redirect_url;
+      }, 3000);
+    } else {
+      setTimeout(() => {
+        login_message.classList.remove("show");
+      }, 3000);
+    }
+  } catch (error) {
+    console.error("Login error:", error);
+
+    login_message.textContent =
+      "Unable to complete login. Please check your connection and try again.";
+
+    login_message.className = "form_message error show";
   }
 });
 

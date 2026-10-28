@@ -11,6 +11,9 @@ from routes.attendance import attendance
 from apscheduler.schedulers.background import BackgroundScheduler
 from services.attendance_service import process_class_sessions
 from zoneinfo import ZoneInfo
+from routes.device_security import (
+    device_security,
+)
 
 load_dotenv()
 
@@ -24,6 +27,8 @@ app.register_blueprint(admissions)
 app.register_blueprint(registration)
 app.register_blueprint(dashboard)
 app.register_blueprint(attendance)
+app.register_blueprint(device_security)
+
 
 print("\nREGISTERED ROUTES:")
 
@@ -51,6 +56,6 @@ if __name__ == "__main__":
             print(rule.rule, "->", rule.endpoint)
 
     try:
-        app.run(debug=True, use_reloader=False)
+        app.run(host="0.0.0.0", port=5000, debug=True, use_reloader=False)
     finally:
         scheduler.shutdown()

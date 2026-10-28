@@ -7,7 +7,7 @@
   min-height: 0;
 
   .left_column_group {
-    grid-template-rows: minmax(0, 1.2fr) minmax(0, 0.8fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .right_column_group {

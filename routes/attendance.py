@@ -272,7 +272,7 @@ def scan_attendance_qr():
     # Atomically consume the current token and replace it.
     # Only one request can successfully match this exact token.
     next_token = generate_qr_token()
-    next_expiry = now + timedelta(seconds=30)
+    next_expiry = now + timedelta(seconds=3)
 
     updated_session = class_sessions_collection.find_one_and_update(
         {
@@ -1186,7 +1186,7 @@ def start_attendance_session():
             )
 
     token = generate_qr_token()
-    token_expiry = now + timedelta(seconds=30)
+    token_expiry = now + timedelta(seconds=3)
 
     if class_session:
         class_sessions_collection.update_one(
@@ -1331,7 +1331,7 @@ def get_attendance_qr():
 
     if not token or not expires_at or to_manila_time(expires_at) <= now:
         new_token = generate_qr_token()
-        new_expiry = now + timedelta(seconds=30)
+        new_expiry = now + timedelta(seconds=3)
 
         # Replace only the expired token. Concurrent requests
         # cannot overwrite a token that another request replaced.
