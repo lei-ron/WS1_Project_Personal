@@ -330,39 +330,33 @@ async function initializeAttendancePage() {
 async function checkForNewAttendance() {
   const sectionName = sectionSelect.value;
   const subjectCode = subjectSelect.value;
-
   if (!sectionName || !subjectCode || attendanceCheckInProgress) {
     return;
   }
-
   attendanceCheckInProgress = true;
-
   try {
+    const query = new URLSearchParams({
+      section_name: sectionName,
+      subject_code: subjectCode,
+    });
     const response = await fetch(
-      `/get_attendance_records?section_name=${encodeURIComponent(sectionName)}&subject_code=${encodeURIComponent(subjectCode)}`,
+      `/get_attendance_records?${query.toString()}`,
       { cache: "no-store" },
     );
-
     if (!response.ok) {
       return;
     }
-
     const data = await response.json();
-
     const currentStatus = data.status;
-
     if (previousSubjectStatus === "Ongoing" && currentStatus === "Completed") {
-      window.location.reload();
+      previousSubjectStatus = currentStatus;
+      await loadAttendanceRecords();
       return;
     }
-
     previousSubjectStatus = currentStatus;
-
-    if (!data.records) {
+    if (!Array.isArray(data.records)) {
       return;
     }
-
-    // Identify records using their student ID and check-in time.
     const currentRecords = data.records.map((record) =>
       JSON.stringify([
         record.student_id,
@@ -371,26 +365,15 @@ async function checkForNewAttendance() {
         record.status,
       ]),
     );
-
-    if (previousAttendanceRecords === null) {
-      previousAttendanceRecords = currentRecords;
-      return;
-    }
-
-    const hasNewRecord = currentRecords.some(
-      (record) => !previousAttendanceRecords.includes(record),
-    );
-
-    if (hasNewRecord) {
-      // Preserve the selected section and subject.
-      sessionStorage.setItem("attendance_section", sectionName);
-      sessionStorage.setItem("attendance_subject", subjectCode);
-
-      window.location.reload();
-      return;
-    }
-
+    const hasNewRecord =
+      previousAttendanceRecords !== null &&
+      currentRecords.some(
+        (record) => !previousAttendanceRecords.includes(record),
+      );
     previousAttendanceRecords = currentRecords;
+    if (hasNewRecord) {
+      await loadAttendanceRecords();
+    }
   } catch (error) {
     console.error("Error checking for new attendance:", error);
   } finally {
@@ -401,8 +384,8 @@ async function checkForNewAttendance() {
 // Start initialization after the script runs.
 initializeAttendancePage().then(() => {
   if (sectionSelect.value && subjectSelect.value) {
+    previousAttendanceRecords = null;
     checkForNewAttendance();
-
     setInterval(checkForNewAttendance, 2000);
   }
 });
